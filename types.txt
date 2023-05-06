@@ -1,0 +1,28 @@
+COMMENT
+Formato: <tipo_do_token>; <token>; <exp>
+Devem ser separados por VIRGULA_ESPAÇO
+Trim é realizada em cada linha
+
+Notação prefixada dos operadores
+Não aceita parenteses redundantes
+Operadores válidos: + * [] | () , 
+[] deve ser usado para definir range de caracteres:   [a-Z]   [a-zA-Z]
+Escapar dos operadores: \
+
+
+
+
+END COMMENT
+
+QUERY; ?-; ?-
+PREDICATE; :-; :-
+ATRIB; ::=; ::=
+PIPE; |; \|
+DOT; .; .
+COMMA; ,; ,
+PAREN_OPEN; (; \(
+PAREN_CLOSE; ); \)
+NUMERAL_INT; NUMERAL_INT; +[0-9]
+TESTE_SEQ; TESTE_SEQ; *(abc)
+TESTE_OR; TESTE_OR; *(|(a,b,c))
+ID; ID; +[a-zA-Z]*(|([a-zA-Z],[0-9],_))
