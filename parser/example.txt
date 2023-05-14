@@ -1,0 +1,17 @@
+int main(){
+    int a = 5;
+}
+
+
+[
+ ['int', 'int'], 
+ [identifier, 'main'],
+ ['(', '('],
+ [')', ')'], 
+ ['{', '{'],
+ ['int', 'int'],
+ ['identifier', 'a'],
+ ['='],
+ ['number', '5'],
+ [';', ';']
+]
