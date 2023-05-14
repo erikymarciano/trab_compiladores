@@ -1,4 +1,11 @@
 import re
+from copy import deepcopy as clone
+from collections import defaultdict
+
+
+def subtract_list(listA:list, listB:list) -> list:
+    return [o for o in listA if o not in listB]
+
 
 class Token:
     def __init__(self, nome:str, token:str, exp:str) -> None:
@@ -33,10 +40,177 @@ class Rule:
         
     def __str__(self) -> str:
         return '{} -> {} : {}'.format(self.from_id, self.to_id, self.exp)
+
+
+class Automata:
+    def __init__(self, start_stage:int) -> None:
+        self.rules = []
+        self.final_stages = []
+        self.start_stage = self.current_stage = start_stage
+        self.paused = False
+        self.stages = []
+        self.terminals = []
+        self.get_stages_from_rules()
+    
+    def __str__(self) -> str:
+        out = 'start: {}\n'.format(self.start_stage)
+        out += ('\n'.join([str(r) for r in self.rules])) + '\n'
+        out += 'finals: {}\n\n'.format(str(self.final_stages))
+        return out
+    
+    def get_stages_from_rules(self) -> None:
+        self.stages = []
+        for r in self.rules:
+            self.add_rules_info(r)
+    
+    def is_stage_final(self, stage:int) -> bool:
+        return stage in self.final_stages
+    
+    def add_rule(self, rule:Rule) -> None:
+        self.rules.append(rule)
+        self.add_rules_info(rule)
         
-    def accepts(self, char:str) -> bool:
-        match = re.match(self.exp, char)
-        return match != None and match.start() == 0
+    def add_rules_info(self, rule:Rule) -> None:
+        self.stages.append(rule.from_id)
+        self.stages.append(rule.to_id)
+        if rule.exp != EPSILON:
+            self.terminals.append(rule.exp)
+        self.stages = list(set(self.stages))
+        self.terminals = list(set(self.terminals))
+        
+    def set_final_stages(self, final_stages:list[int]) -> None:
+        self.final_stages = final_stages
+        
+    def reset(self) -> None:
+        self.current_stage = self.start_stage
+        self.paused = False
+    
+
+class AFN(Automata):
+    def _fechamentoE(self, stages:list[int]) -> list[int]:
+        stack = []
+        res = []
+        for st in stages:
+            stack.append(st) 
+            res.append(st) 
+        while stack:
+            t = stack.pop()
+            for rule in self.rules:
+                if rule.from_id == t and rule.exp == EPSILON:
+                    u = rule.to_id
+                    if u not in res:
+                        res.append(u)
+                        stack.append(u)
+        return list(set(res))
+    
+    def _move(self, stages:list[int], reading:str) -> list[int]:
+        res = []
+        for rule in self.rules:
+            if rule.from_id in stages and rule.exp == reading:
+                res.append(rule.to_id)
+        return list(set(res))
+
+
+class AFD(Automata):
+    def _transform_from_afn(self, afn:AFN) -> None:
+        self.subsets = {}
+        start_subset = str(afn._fechamentoE([afn.start_stage]))
+        self.subsets.update({start_subset: self.start_stage})
+        Dstage = [(self.start_stage, False)]
+        while any(not st[1] for st in Dstage):
+            unmarkedIndex = next(i for i, st in enumerate(Dstage) if not st[1])
+            Dstage[unmarkedIndex] = (Dstage[unmarkedIndex][0],True)
+            t = Dstage[unmarkedIndex][0]
+            t_subset = self._get_subset_from_afd_stage(t)
+            for term in afn.terminals:
+                u = str(afn._fechamentoE(afn._move(t_subset, term)))
+                if u == '[]':
+                    continue
+                if u not in self.subsets:
+                    dest_stage = get_next_stage_id()
+                    self.subsets.update({u: dest_stage})
+                if all(self.subsets[u] != st[0] for st in Dstage):
+                    Dstage.append((self.subsets[u], False))
+                self.add_rule(Rule(t, self.subsets[u], term))
+        
+        afd_finals = []
+        for subset_key in self.subsets:
+            subset = eval(subset_key)
+            if any(f in subset for f in afn.final_stages):
+                afd_finals.append(self.subsets[subset_key])
+        self.final_stages = list(set(afd_finals))
+    
+    def _move(self, stages:list[int], reading:str) -> int:
+        for rule in self.rules:
+            if rule.from_id in stages and rule.exp == reading:
+                return rule.to_id
+        return -1
+    
+    def _get_subset_from_afd_stage(self, afd_stage:int) -> str:
+        for subset_key in self.subsets:
+            if self.subsets[subset_key] == afd_stage:
+                return eval(subset_key)
+        return ''
+    
+    def _minimize(self) -> None:
+        new_pi = self._new_pi([self.final_stages, subtract_list(self.stages, self.final_stages)])
+        for g in new_pi:
+            for st in g[1:]:
+                for r in self.rules.copy():
+                    if r.from_id == st:
+                        self.rules.remove(r)
+                        continue
+                    r.to_id = next(value[0] for value in new_pi if r.to_id in value)
+        
+        self.get_stages_from_rules()
+        self.start_stage = next(value[0] for value in new_pi if self.start_stage in value)
+        new_finals = []
+        for final in self.final_stages:
+            new_finals.append(next(value[0] for value in new_pi if final in value))
+        self.set_final_stages(new_finals)
+    
+    def _split_group(self, group:list[int], pi:list[list[int]]) -> list[list[int]]:
+        if len(group) < 2:
+            return [group]
+        dests = []
+        for st in group:
+            dest_groups = []
+            for a in self.terminals:
+                dest = self._move([st], a)
+                dest_groups.append(next((i for i, value in enumerate(pi) if dest in value), -1))
+            dests.append(dest_groups)
+        
+        groups = defaultdict(list)
+        for dst in dests:
+            groups[str(dst)].append(dst)
+        
+        partitions = []
+        for g_key in groups:
+            part = []
+            for i in range(len(dests)):
+                if g_key == str(dests[i]):
+                    part.append(group[i])
+            if part:
+                partitions.append(part)
+        return partitions
+    
+    def _new_pi(self, pi:list[list[int]]) -> list[list[int]]:
+        while True:
+            new_pi = clone(pi)
+            for g in pi:
+                subgroups = self._split_group(g, pi)
+                new_pi.remove(g)
+                for sg in subgroups:
+                    new_pi.append(sg)
+            
+            if new_pi == pi:
+                break
+            pi = new_pi
+        return pi
+    # def can_move_reading(self, char:str) -> bool:
+    #     match = re.match(self.exp, char)
+    #     return match != None and match.start() == 0
+    
 
 
 types_file = open('./types.txt', 'r', encoding="utf-8")
@@ -51,7 +225,8 @@ code_file.close()
 rules_file.close()
  
 tokens_tuple = []
-rules = []
+automates = []
+EPSILON = 'ε'
 TOKENS_TO_FILTER = ['\n', ' ', '']
 TOKEN_FILE_SEPARATOR = '; '
 TOKEN_TYPES = {'INVALID': Token('INVALID', 'INVALID', None)}
@@ -132,32 +307,21 @@ def get_next_stage_id() -> int:
 
 
 # Adiciona mais de uma regra de transição, de um estado para outro
-def add_pipe_rule(from_stage:int, to_stage:int, reading_list:list[str]) -> None:
+def add_pipe_rule(automata:Automata, from_stage:int, to_stage:int, reading_list:list[str]) -> None:
     for reading in reading_list:
-        add_rule(from_stage, to_stage, reading)
+        add_rule_to_automata(automata, from_stage, to_stage, reading)
 
 
 # Adiciona regra de transição, de um estado para outro, lendo expressão       
-def add_rule(from_stage:int, to_stage:int, reading:str) -> None:
+def add_rule_to_automata(automata:Automata, from_stage:int, to_stage:int, reading:str) -> None:
     if from_stage == to_stage and not reading:
         return
     
-    rule = Rule(from_stage, to_stage, reading)
-    rules.append(rule)
-    rules_file = open('./rules.txt', 'a', encoding="utf-8")
-    rules_file.write(str(rule) + '\n')
-    rules_file.close()
-
-
-# Adiciona quebra de linha para separar automatos de diferentes tokens
-def separate_token_rules() -> None:
-    rules_file = open('./rules.txt', 'a', encoding="utf-8")
-    rules_file.write('\n')
-    rules_file.close()
+    automata.add_rule(Rule(from_stage, to_stage, reading))
 
 
 # Vai adicionado as regras de transição do automato conforme vai lendo expressão
-def compute_rule_for_exp(current_stage:int, exp:str) -> int:
+def compute_rule_for_exp(automata:Automata, current_stage:int, exp:str) -> int:
     try:
         if exp == '':
             return current_stage
@@ -166,34 +330,39 @@ def compute_rule_for_exp(current_stage:int, exp:str) -> int:
         next_exp = get_next_exp(exp)
         
         if current_exp == '*':
-            end_stage = compute_rule_for_exp(current_stage, next_exp)
-            add_rule(end_stage, current_stage, 'ε')
-            add_rule(current_stage, end_stage, 'ε')
-            return compute_rule_for_exp(end_stage, exp[1 + len(next_exp):])
+            end_stage = compute_rule_for_exp(automata, current_stage, next_exp)
+            add_rule_to_automata(automata, end_stage, current_stage, EPSILON)
+            add_rule_to_automata(automata, current_stage, end_stage, EPSILON)
+            return compute_rule_for_exp(automata, end_stage, exp[1 + len(next_exp):])
         
         if current_exp == '+':
-            end_stage = compute_rule_for_exp(current_stage, next_exp)
-            add_rule(end_stage, current_stage, 'ε')
-            return compute_rule_for_exp(end_stage, exp[1 + len(next_exp):])
+            end_stage = compute_rule_for_exp(automata, current_stage, next_exp)
+            add_rule_to_automata(automata, end_stage, current_stage, EPSILON)
+            return compute_rule_for_exp(automata, end_stage, exp[1 + len(next_exp):])
             
         if current_exp == '|':
             pass
             next_stage = get_next_stage_id()
-            add_pipe_rule(current_stage, next_stage, split_pipe_exp(next_exp[1:-1]))
-            return compute_rule_for_exp(next_stage, exp[1 + len(next_exp):])
+            add_pipe_rule(automata, current_stage, next_stage, split_pipe_exp(next_exp[1:-1]))
+            return compute_rule_for_exp(automata, next_stage, exp[1 + len(next_exp):])
             
         if current_exp.startswith('('):
             current_exp = current_exp[1:-1]
-            return compute_rule_for_exp(current_stage, current_exp)
+            return compute_rule_for_exp(automata, current_stage, current_exp)
         
         next_stage = get_next_stage_id()
-        add_rule(current_stage, next_stage, current_exp)
-        return compute_rule_for_exp(next_stage, exp[len(current_exp):])
+        add_rule_to_automata(automata, current_stage, next_stage, current_exp)
+        return compute_rule_for_exp(automata, next_stage, exp[len(current_exp):])
     except:
         print('Error creating rule!')
         exit(1)
 
 
+def export_automates(automates:list[Automata]):
+    rules_file = open('./rules.txt', 'a', encoding="utf-8")
+    for automata in automates:
+        rules_file.write(str(automata))        
+    rules_file.close()
 
 
 def get_token_type(token: str) -> Token:
@@ -290,23 +459,49 @@ def extract_types(data_lines:list[str]) -> None:
         print("Error reading file of types!")
         exit(1)
 
-
 data_pos = 0
 data_len = len(data)
 extract_types(data_types)
-automates_start = []
 for k in TOKEN_TYPES:
     token = TOKEN_TYPES[k]
     if not token.exp:
         continue
     start_stage = UNIQUE_ID
-    automates_start.append(start_stage)
-    compute_rule_for_exp(start_stage, token.exp)
-    separate_token_rules()
+    automata = Automata(start_stage)
+    end_stage = compute_rule_for_exp(automata, start_stage, token.exp)
+    automata.set_final_stages([end_stage])
+    automates.append(automata)
     print('Token Found:\t', token)
     get_next_stage_id()
 
+export_automates(automates)
 print('Reading program...')
+
+
+dragonAFN = AFN(0)
+dragonAFN.add_rule(Rule(0, 1, EPSILON))
+dragonAFN.add_rule(Rule(0, 7, EPSILON))
+dragonAFN.add_rule(Rule(1, 2, EPSILON))
+dragonAFN.add_rule(Rule(1, 4, EPSILON))
+dragonAFN.add_rule(Rule(2, 3, 'a'))
+dragonAFN.add_rule(Rule(3, 6, EPSILON))
+dragonAFN.add_rule(Rule(4, 5, 'b'))
+dragonAFN.add_rule(Rule(5, 6, EPSILON))
+dragonAFN.add_rule(Rule(6, 1, EPSILON))
+dragonAFN.add_rule(Rule(6, 7, EPSILON))
+dragonAFN.add_rule(Rule(7, 8, 'a'))
+dragonAFN.add_rule(Rule(8, 9, 'b'))
+dragonAFN.add_rule(Rule(9, 10, 'b'))
+dragonAFN.set_final_stages([10])
+print('move: {}'.format(dragonAFN._move([0, 1, 2, 4, 7], 'a')))
+print('fechamentoE: {}'.format(dragonAFN._fechamentoE([3, 8])))
+
+dragonAFD = AFD(11)
+dragonAFD._transform_from_afn(dragonAFN)
+print(dragonAFD)
+dragonAFD._minimize()
+print(dragonAFD)
+
 exit()
 while data_pos < data_len:
     char = data[data_pos]
