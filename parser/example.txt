@@ -5,7 +5,7 @@ int main(){
 
 [
  ['int', 'int'], 
- [identifier, 'main'],
+ ['identifier', 'main'],
  ['(', '('],
  [')', ')'], 
  ['{', '{'],
