@@ -1,5 +1,5 @@
 bnf_rules = [['<Type>', 'identifier', '(', '<ArgList>', ')', '<CompoundStmt>'],
-             ['<Arg>', '<ArgList->'],
+             ['<Arg>', '<ArgList~>'],
              [',', '<Arg>', '<ArgList~>'],
              ['ε'],
              ['<Type>', 'identifier'],
@@ -169,11 +169,12 @@ table = {
         'if': [27],
         'for': [27],
         'while': [27],
-        ';': [27],
+        ';': [27], #verificar
         '{': [27],
         '(': [27],
         '+': [27],
-        '-': [27]
+        '-': [27],
+        '}': [28]
     },
     '<Expr>': {
         'identifier': [29,30],
@@ -266,7 +267,7 @@ terminals = [
     'for',
     'while',
     ',',
-    ';'
+    ';',
     '{',
     '(',
     '+',
