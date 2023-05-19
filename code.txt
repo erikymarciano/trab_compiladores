@@ -1,9 +1,7 @@
-int integer_power(int number, int power)
-{
-    int res;
-    int i = 0;
-    while (i < power){
-        res = res + (number * number);
-        i = i + 1;
-    }
+int main(float parama, int paramb){
+    int hello;
+    if(5 == 5);
+    else;
+    int i;
+    float result;
 }

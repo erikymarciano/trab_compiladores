@@ -1,0 +1,106 @@
+<Function>
+├── <CompoundStmt>
+│   ├── }
+│   ├── <StmtList>
+│   │   ├── <StmtList>
+│   │   │   ├── <StmtList>
+│   │   │   │   ├── <StmtList>
+│   │   │   │   │   ├── <StmtList>
+│   │   │   │   │   │   ├── <StmtList>
+│   │   │   │   │   │   │   ├── <StmtList>
+│   │   │   │   │   │   │   │   ├── <StmtList>
+│   │   │   │   │   │   │   │   │   └── ε
+│   │   │   │   │   │   │   │   └── <Stmt>
+│   │   │   │   │   │   │   │       └── ;
+│   │   │   │   │   │   │   └── <Stmt>
+│   │   │   │   │   │   │       └── <Declaration>
+│   │   │   │   │   │   │           ├── <IdentList>
+│   │   │   │   │   │   │           │   ├── <IdentList~>
+│   │   │   │   │   │   │           │   │   └── ε
+│   │   │   │   │   │   │           │   └── identifier
+│   │   │   │   │   │   │           └── <Type>
+│   │   │   │   │   │   │               └── float
+│   │   │   │   │   │   └── <Stmt>
+│   │   │   │   │   │       └── ;
+│   │   │   │   │   └── <Stmt>
+│   │   │   │   │       └── <Declaration>
+│   │   │   │   │           ├── <IdentList>
+│   │   │   │   │           │   ├── <IdentList~>
+│   │   │   │   │           │   │   └── ε
+│   │   │   │   │           │   └── identifier
+│   │   │   │   │           └── <Type>
+│   │   │   │   │               └── int
+│   │   │   │   └── <Stmt>
+│   │   │   │       └── <IfStmt>
+│   │   │   │           ├── <ElsePart>
+│   │   │   │           │   ├── <Stmt>
+│   │   │   │           │   │   └── ;
+│   │   │   │           │   └── else
+│   │   │   │           ├── <Stmt>
+│   │   │   │           │   └── ;
+│   │   │   │           ├── <Expr>
+│   │   │   │           │   └── <Rvalue>
+│   │   │   │           │       ├── <Rvalue~>
+│   │   │   │           │       │   └── ε
+│   │   │   │           │       └── <Mag>
+│   │   │   │           │           ├── <Mag~>
+│   │   │   │           │           │   └── ε
+│   │   │   │           │           └── <Term>
+│   │   │   │           │               ├── <Term~>
+│   │   │   │           │               │   └── ε
+│   │   │   │           │               └── <Factor>
+│   │   │   │           │                   ├── )
+│   │   │   │           │                   ├── <Expr>
+│   │   │   │           │                   │   └── <Rvalue>
+│   │   │   │           │                   │       ├── <Rvalue~>
+│   │   │   │           │                   │       │   ├── <Rvalue~>
+│   │   │   │           │                   │       │   │   └── ε
+│   │   │   │           │                   │       │   ├── <Mag>
+│   │   │   │           │                   │       │   │   ├── <Mag~>
+│   │   │   │           │                   │       │   │   │   └── ε
+│   │   │   │           │                   │       │   │   └── <Term>
+│   │   │   │           │                   │       │   │       ├── <Term~>
+│   │   │   │           │                   │       │   │       │   └── ε
+│   │   │   │           │                   │       │   │       └── <Factor>
+│   │   │   │           │                   │       │   │           └── number
+│   │   │   │           │                   │       │   └── <Compare>
+│   │   │   │           │                   │       │       └── ==
+│   │   │   │           │                   │       └── <Mag>
+│   │   │   │           │                   │           ├── <Mag~>
+│   │   │   │           │                   │           │   └── ε
+│   │   │   │           │                   │           └── <Term>
+│   │   │   │           │                   │               ├── <Term~>
+│   │   │   │           │                   │               │   └── ε
+│   │   │   │           │                   │               └── <Factor>
+│   │   │   │           │                   │                   └── number
+│   │   │   │           │                   └── (
+│   │   │   │           └── if
+│   │   │   └── <Stmt>
+│   │   │       └── ;
+│   │   └── <Stmt>
+│   │       └── <Declaration>
+│   │           ├── <IdentList>
+│   │           │   ├── <IdentList~>
+│   │           │   │   └── ε
+│   │           │   └── identifier
+│   │           └── <Type>
+│   │               └── int
+│   └── {
+├── )
+├── <ArgList>
+│   ├── <ArgList~>
+│   │   ├── <ArgList~>
+│   │   │   └── ε
+│   │   ├── <Arg>
+│   │   │   ├── identifier
+│   │   │   └── <Type>
+│   │   │       └── int
+│   │   └── ,
+│   └── <Arg>
+│       ├── identifier
+│       └── <Type>
+│           └── float
+├── (
+├── identifier
+└── <Type>
+    └── int
