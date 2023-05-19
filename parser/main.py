@@ -1,5 +1,4 @@
 from anytree import Node, RenderTree
-from copy import deepcopy
 from parser_data import *
 from bnf import *
 
@@ -51,15 +50,15 @@ input_2 = [
  ['int', 'int', 11],
  ['identifier', 'hello', 12],
  [';', ';', 13],
-#  ['if', 'if', 11],
-#  ['(', '(', 12],
-#  ['number', '5', 13],
-#  ['==', '==', 13],
-#  ['number', '5', 13],
-#  [')', ')', 12],
-#  [';', ';', 12],
-#  ['else', 'else', 12],
-#  [';', ';', 12],
+ ['if', 'if', 11],
+ ['(', '(', 12],
+ ['number', '5', 13],
+ ['==', '==', 13],
+ ['number', '5', 13],
+ [')', ')', 12],
+ [';', ';', 12],
+ ['else', 'else', 12],
+ [';', ';', 12],
  ['int', 'int', 14],
  ['identifier', 'i', 15],
  [';', ';', 16],
@@ -76,7 +75,7 @@ def parser(scanner_output):
     pile.extend(derivacao)
     print(pile)
     
-    pile_backtrack:list[(int, int, list[Node], list[str])] = [] # i_entrada, id_regra, no_pai, estado_lista_nos, estado_da_pilha
+    pile_backtrack:list[(int, int, list[Node], list[str])] = [] # i_entrada, id_regra, estado_lista_nos, estado_da_pilha
     try_backtrack = False
     backtracking_aux = None
     i = 0
@@ -110,7 +109,7 @@ def parser(scanner_output):
                     elif pile[-1] in table.keys() and scanner_output[i][0] in table[pile[-1]].keys():
                         aux = table[pile[-1]][scanner_output[i][0]]
                         for k in range(1, len(aux)):
-                            pile_backtrack.append((i + 1, aux[0], deepcopy(tree_nodes), pile.copy()))
+                            pile_backtrack.append((i, aux[0]-1, tree_nodes.copy(), pile.copy()))
                     if (pile[-1] not in terminals) and (aux != None):
                         # producao()
                         node_name = pile.pop()
@@ -136,9 +135,10 @@ def parser(scanner_output):
             
             try_backtrack = False
             (i, backtracking_aux, pilha_nos, pile) = pile_backtrack.pop()
-            pai_errado = pilha_nos.pop()
+            print((i, backtracking_aux, pilha_nos, pile))
             tree_nodes = pilha_nos
-            tree_nodes.append(Node(pai_errado.name, pai_errado.parent))
+            pai_errado = pilha_nos[-1]
+            pai_errado.children = []
             continue
         break
     
@@ -150,5 +150,5 @@ def parser(scanner_output):
             
             
 
-parser(input_4)
+parser(input_2)
 
