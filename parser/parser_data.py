@@ -284,3 +284,31 @@ terminals = [
     ')',
     '}'
 ]
+
+follow = {
+    '<Function>': ['$'],
+    '<ArgList>': [')'],
+    '<ArgList~>': [')'],
+    '<Arg>': [',', ')'],
+    '<Declaration>': ['int', 'float', ';', '{', 'if', '(', '-', '+', 'identifier', 'number', 'while', 'for', 'else'],
+    '<Type>': ['identifier'],
+    '<IdentList>': [';'],
+    '<IdentList~>': [';'],
+    '<Stmt>': ['int', 'float', ';', '{', 'if', '(', '-', '+', 'identifier', 'number', 'while', 'for', 'else'],
+    '<ForStmt>': ['int', 'float', ';', '{', 'if', '(', '-', '+', 'identifier', 'number', 'while', 'for', 'else'],
+    '<OptExpr>': [';', ')'],
+    '<WhileStmt>': ['int', 'float', ';', '{', 'if', '(', '-', '+', 'identifier', 'number', 'while', 'for', 'else'],
+    '<IfStmt>': ['int', 'float', ';', '{', 'if', '(', '-', '+', 'identifier', 'number', 'while', 'for', 'else'],
+    '<ElsePart>': ['int', 'float', ';', '{', 'if', '(', '-', '+', 'identifier', 'number', 'while', 'for', 'else'],
+    '<CompoundStmt>': ['$'],
+    '<StmtList>': ['}'],
+    '<Expr>': [';', ')'],
+    '<Rvalue>': [';', ')'],
+    '<Rvalue~>': [';', ')'],
+    '<Compare>': [';', ')'],
+    '<Mag>': [';', ')', '==', '<', '>', '<=', '>=', '!='],
+    '<Mag~>': [';', ')', '==', '<', '>', '<=', '>=', '!='],
+    '<Term>': [';', ')', '==', '<', '>', '<=', '>=', '!=', '-', '+'],
+    '<Term~>': [';', ')', '==', '<', '>', '<=', '>=', '!=', '-', '+'],
+    '<Factor>': [';', ')', '==', '<', '>', '<=', '>=', '!=', '-', '+', '/', '*']
+}
