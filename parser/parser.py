@@ -10,6 +10,8 @@ for element in saida:
     formatted_output.append(eval(element))
 output_test.close()
 
+parser_error_messages = []
+
 def parser(scanner_output):
     pile = ['$']
     derivacao = bnf_rules[0][::-1]
@@ -26,7 +28,7 @@ def parser(scanner_output):
         node = Node(item, parent=tree)
         tree_nodes.append(node)
     while(True):
-        while pile[-1] != '$' and scanner_output[i] != '$':
+        while pile[-1] != '$' and scanner_output[i][0] != '$':
             if (pile[-1] == 'ε'):
                 pile.pop()
                 tree_nodes.pop()
@@ -64,16 +66,22 @@ def parser(scanner_output):
                     else:
                         try_backtrack = True
                         break
-            if (pile[-1] == '$') and (scanner_output[i][0] == '$'):
-                print('arvore')
-                break
             
         if try_backtrack:
-            print('Backtraking...')
             if not pile_backtrack:
-                print('Erro na linha ' + str(scanner_output[3]))
+                parser_error_messages.append('Erro na linha: {}, token {}'.format(scanner_output[i][2], scanner_output[i][1]))
+                
+                if pile[-1] in table.keys() and scanner_output[i][0] not in table[pile[-1]].keys():
+                    if scanner_output[i][0] == '$' or (scanner_output[i][0] in follow[pile[-1]]):                            
+                        pile.pop()   
+                    else:
+                        while (scanner_output[i][0] != '$') and ((scanner_output[i][0] not in first[pile[-1]]) and (scanner_output[i][0] not in follow[pile[-1]])):
+                            i = i+1
+                    continue
+                
                 break
             
+            print('Backtraking...')
             try_backtrack = False
             (i, backtracking_aux, pilha_nos, pile) = pile_backtrack.pop()
             print((i, backtracking_aux, pilha_nos, pile))
@@ -81,15 +89,25 @@ def parser(scanner_output):
             pai_errado = pilha_nos[-1]
             pai_errado.children = []
             continue
+    
+        
+        if pile[-1] != '$' or scanner_output[i][0] != '$':
+            parser_error_messages.append('Erro na linha: {}, token {}'.format(scanner_output[i][2], scanner_output[i][1]))
+
         break
     
     
-    tree_file = open('./tree.txt', 'w', encoding="utf-8")
-    for pre, _, node in RenderTree(tree):
-        tree_file.write("%s%s\n" % (pre, node.name))
+    tree_file = open('./parser_output.txt', 'w', encoding="utf-8")
+    if not parser_error_messages:
+        for pre, _, node in RenderTree(tree):
+            tree_file.write("%s%s\n" % (pre, node.name))
+    else:
+        print("[Parser Error]")
+        tree_file.write('\n'.join(parser_error_messages))
     tree_file.close()
+    
             
-            
+    
 
 parser(formatted_output)
 
