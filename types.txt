@@ -8,21 +8,35 @@ Não aceita parenteses redundantes
 Operadores válidos: + * [] | () , 
 [] deve ser usado para definir range de caracteres:   [a-Z]   [a-zA-Z]
 Escapar dos operadores: \
-
-
-
-
 END COMMENT
 
-QUERY; ?-; ?-
-PREDICATE; :-; :-
-ATRIB; ::=; ::=
-PIPE; |; \|
-DOT; .; .
+
+SEPARATORS
+(; ); .; ,; ;
+END SEPARATORS
+
+
+INT; int; int
+FLOAT; float; float
+IF; if; if
+ELSE; else; else
+WHILE; while; while
+PLUS; +; \+
+MINUS; -; -
+MULT; *; \*
+DIV; /; \/
+LT; <; <
+LE; <=; <=
+GT; >; >
+GE; >=: >=
+EQ; ==; ==
+NE; !=; !=
+ATTR; =; \=
 COMMA; ,; ,
-PAREN_OPEN; (; \(
-PAREN_CLOSE; ); \)
-NUMERAL_INT; NUMERAL_INT; +[0-9]
-TESTE_SEQ; TESTE_SEQ; *(abc)
-TESTE_OR; TESTE_OR; *(|(a,b,c))
-ID; ID; +[a-zA-Z]*(|([a-zA-Z],[0-9],_))
+PCOMMA; ;; ;
+LBRACKET; \(; \(
+RBRACKET; \); \)
+LBRACE; \{; \{
+RBRACE; \}; \}
+NUMBER; number; *(-)*(\+)+[0-9]
+ID; identifier; *(_)+[a-zA-Z]*(_)*([a-zA-Z])
