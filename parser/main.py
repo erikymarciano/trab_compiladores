@@ -1,75 +1,11 @@
 from anytree import Node, RenderTree
 from parser_data import *
 from bnf import *
-
-simple_input = [
- ['int', 'int', 1], 
- ['identifier', 'main', 2],
- ['(', '(', 3],
- [')', ')', 4], 
- ['{', '{', 5],
- ['int', 'int', 6],
- ['identifier', 'a', 7],
- ['=', '=', 8],
- ['number', '5', 9],
- [';', ';', 10],
- ['}', '}', 10],
- ['$', '$', 11]
-]
-
-input_4 = [
- ['int', 'int', 1], 
- ['identifier', 'main', 2],
- ['(', '(', 3],
- ['int', 'int', 4],
- ['identifier', 'haha', 5],
- [')', ')', 6], 
- ['{', '{', 7],
- ['int', 'int', 8],
- ['identifier', 'a', 9],
- [';', ';', 12],
- ['identifier', 'a', 9],
- ['=', '=', 10],
- ['number', '5', 11],
- [';', ';', 12],
- ['}', '}', 13],
- ['$', '$', 14]
-]
-
-input_2 = [
- ['int', 'int', 1],
- ['identifier', 'main', 2],
- ['(', '(', 3],
- ['float', 'float', 4],
- ['identifier', 'param1', 5],
- [',', ',', 6],
- ['int', 'int', 7],
- ['identifier', 'param2', 8],
- [')', ')', 9],
- ['{', '{', 10],
- ['int', 'int', 11],
- ['identifier', 'hello', 12],
- [';', ';', 13],
- ['if', 'if', 11],
- ['(', '(', 12],
- ['number', '5', 13],
- ['==', '==', 13],
- ['number', '5', 13],
- [')', ')', 12],
- [';', ';', 12],
- ['else', 'else', 12],
- [';', ';', 12],
- ['int', 'int', 14],
- ['identifier', 'i', 15],
- [';', ';', 16],
- ['float', 'float', 17],
- ['identifier', 'result', 18],
- [';', ';', 19],
- ['}', '}', 20],
- ['$', '$', 21]
-]
+from examples import *
 
 def parser(scanner_output):
+    error = False
+    error_list = []
     pile = ['$']
     derivacao = bnf_rules[0][::-1]
     pile.extend(derivacao)
@@ -106,46 +42,62 @@ def parser(scanner_output):
                     if backtracking_aux:
                         aux = [backtracking_aux]
                         backtracking_aux = None
-                    elif pile[-1] in table.keys() and scanner_output[i][0] in table[pile[-1]].keys():
-                        aux = table[pile[-1]][scanner_output[i][0]]
-                        for k in range(1, len(aux)):
-                            pile_backtrack.append((i, aux[0]-1, tree_nodes.copy(), pile.copy()))
-                    if (pile[-1] not in terminals) and (aux != None):
-                        # producao()
-                        node_name = pile.pop()
-                        node_parent = tree_nodes.pop()
-                        derivacao = bnf_rules[aux[0]-1][::-1]
-                        for item in derivacao:
-                            node = Node(item, parent=node_parent)
-                            tree_nodes.append(node)
-                        pile.extend(derivacao)
-                        print(pile)
+                    elif pile[-1] in table.keys():
+                        if scanner_output[i][0] in table[pile[-1]].keys():
+                            aux = table[pile[-1]][scanner_output[i][0]]
+                            node_name = pile.pop()
+                            node_parent = tree_nodes.pop()
+                            derivacao = bnf_rules[aux[0]-1][::-1]
+                            for item in derivacao:
+                                node = Node(item, parent=node_parent)
+                                tree_nodes.append(node)
+                            pile.extend(derivacao)
+                            print(pile)
+                            for k in range(1, len(aux)):
+                                pile_backtrack.append((i, aux[0]-1, tree_nodes.copy(), pile.copy()))
+                        else:
+                            error = True
+                            error_list.append('Erro de celula nao preenchida na linha ' + str(scanner_output[i][2]) + ' token: ' + str(scanner_output[i][1]))
+                            if scanner_output[i][0] == '$' or (scanner_output[i][0] in follow[pile[-1]]):                            
+                                pile.pop()   
+                            else:
+                                while (scanner_output[i][0] != '$') and ((scanner_output[i][0] not in first[pile[-1]]) and (scanner_output[i][0] not in follow[pile[-1]])):
+                                    i = i+1                        
                     else:
                         try_backtrack = True
                         break
-            if (pile[-1] == '$') and (scanner_output[i][0] == '$'):
-                print('arvore')
-                break
+        
+        if (pile[-1] == '$') and (scanner_output[i][0] == '$'):
+            break
+
+        else:
+            if try_backtrack:
+                print('Backtraking...')
+                if not pile_backtrack:
+                    print('Erro na linha ' + str(scanner_output[2]))
+                    break
+                
+                try_backtrack = False
+                (i, backtracking_aux, pilha_nos, pile) = pile_backtrack.pop()
+                print((i, backtracking_aux, pilha_nos, pile))
+                tree_nodes = pilha_nos
+                pai_errado = pilha_nos[-1]
+                pai_errado.children = []
+                continue
+            else:
+                error_list.append('Erro critico na linha ' + str(scanner_output[i][2]) + ' token: ' + str(scanner_output[i][1]) + ' abortando..')
+                print(error_list)
+                break 
             
-        if try_backtrack:
-            print('Backtraking...')
-            if not pile_backtrack:
-                print('Erro na linha ' + str(scanner_output[3]))
-                break
-            
-            try_backtrack = False
-            (i, backtracking_aux, pilha_nos, pile) = pile_backtrack.pop()
-            print((i, backtracking_aux, pilha_nos, pile))
-            tree_nodes = pilha_nos
-            pai_errado = pilha_nos[-1]
-            pai_errado.children = []
-            continue
-        break
+        
     
     
-    tree_file = open('./tree.txt', 'w', encoding="utf-8")
-    for pre, _, node in RenderTree(tree):
-        tree_file.write("%s%s\n" % (pre, node.name))
+    tree_file = open('./parser_output.txt', 'w', encoding="utf-8")
+    if error == False:
+        for pre, _, node in RenderTree(tree):
+            tree_file.write("%s%s\n" % (pre, node.name))
+    else:
+        tree_file.write('\n'.join(error_list))
     tree_file.close()
             
             
