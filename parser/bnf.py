@@ -1,5 +1,5 @@
 bnf = {'<Function>': {1: ['<Type>', 'identifier', '(', '<ArgList>', ')', '<CompoundStmt>']},
-       '<ArgList>': {2: ['<Arg>', '<ArgList->']},
+       '<ArgList>': {2: ['<Arg>', '<ArgList~>']},
        '<ArgList~>': {3: [',', '<Arg>', '<ArgList~>'],
                       4: ['ε']},
        '<Arg>': {5: ['<Type>', 'identifier']},

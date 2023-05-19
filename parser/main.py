@@ -1,57 +1,14 @@
 from parser_data import *
 from bnf import *
-
-simple_input = [
- ['int', 'int', 1], 
- ['identifier', 'main', 2],
- ['(', '(', 3],
- [')', ')', 4], 
- ['{', '{', 5],
- ['int', 'int', 6],
- ['identifier', 'a', 7],
- ['=', '=', 8],
- ['number', '5', 9],
- [';', ';', 10],
- ['$', '$', 11]
-]
-
-input_2 = [
- ['int', 'int', 1],
- ['identifier', 'main', 2],
- ['(', '(', 3],
- ['float', 'float', 4],
- ['identifier', 'param1', 5],
- [',', ',', 6],
- ['int', 'int', 7],
- ['identifier', 'param2', 8],
- [')', ')', 9],
- ['{', '{', 10],
- ['int', 'int', 11],
- ['identifier', 'hello', 12],
- [';', ';', 13],
- ['if', 'if', 11],
- ['(', '(', 12],
- ['number', '5', 13],
- ['==', '==', 13],
- ['number', '5', 13],
- [')', ')', 12],
- [';', ';', 12],
- ['else', 'else', 12],
- [';', ';', 12],
- ['int', 'int', 14],
- ['identifier', 'i', 15],
- [';', ';', 16],
- ['float', 'float', 17],
- ['identifier', 'result', 18],
- [';', ';', 19],
- ['}', '}', 20],
- ['$', '$', 21]
-]
+from examples import *
 
 def parser(scanner_output):
+    print(scanner_output)
     pile = ['$']
     pile.extend(bnf_rules[0][::-1])
     print(pile)
+    error = False
+    error_list = []
     
     pile_backtrack:list[(int, int, list[str])] = []
     try_backtrack = False
@@ -59,53 +16,84 @@ def parser(scanner_output):
     i = 0
     while(True):
         while pile[-1] != '$' and scanner_output[i] != '$':
-            if pile[-1] == '<ElsePart>':
-                pass
             if (pile[-1] == 'ε'):
                 pile.pop()
                 print(pile)
             else:
                 print('Topo da pilha: '+pile[-1])
-                print('Token atual: '+scanner_output[i][0])
+                print('Token atual: '+scanner_output[i][0]+' posicao('+str(i)+')')
                 if (pile[-1] in terminals) and (pile[-1] == scanner_output[i][0]):
                     # match();
                     pile.pop()
                     print(pile)
+                    print('acrescentando 1')
                     i = i+1
-                else:
-                    
+                else:                    
                     if backtracking_aux:
                         aux = [backtracking_aux]
                         backtracking_aux = None
                     elif pile[-1] in table.keys() and scanner_output[i][0] in table[pile[-1]].keys():
                         aux = table[pile[-1]][scanner_output[i][0]]
-                        for k in range(1, len(aux)):
-                            pile_backtrack.append((i + 1, aux[0], pile.copy()))
-                    if (pile[-1] not in terminals) and (aux != None):
-                        # producao()
-                        pile.pop()
-                        pile.extend(bnf_rules[aux[0]-1][::-1])
-                        print(pile)
+                        if len(aux) == 1:
+                            # producao()
+                            pile.pop()
+                            pile.extend(bnf_rules[aux[0]-1][::-1])
+                            print(pile)
+                        elif len(aux) > 1 and try_backtrack == False:
+                            print('entrei elif')
+                            for k in range(1, len(aux)):
+                                pile_backtrack.append((i, aux[0]-1, pile.copy()))
+                            try_backtrack = True
+                            break
+                        else:
+                            print('entrei else')
+                            break
+                    #INICIO BLOCO TRATAMENTO DE ERROS
+                    elif pile[-1] in table.keys() and scanner_output[i][0] not in table[pile[-1]].keys(): 
+                        error = True
+                        error_list.append('Erro de celula nao preenchida na linha ' + str(scanner_output[i][2]))
+                        if scanner_output[i][0] == '$' or (scanner_output[i][0] in follow[pile[-1]]):                            
+                            pile.pop()   
+                        else:
+                            while (scanner_output[i][0] != '$') and ((scanner_output[i][0] not in first[pile[-1]]) and (scanner_output[i][0] not in follow[pile[-1]])):
+                                print('acrescentando 1 tratamento de erro')
+                                i = i+1
+                    #FIM BLOCO TRATAMENTO DE ERROS
                     else:
-                        try_backtrack = True
-                        break
-            if (pile[-1] == '$') and (scanner_output[i][0] == '$'):
-                print('arvore')
-                break
+                        error = True
+                        error_list.append('Erro critico na linha ' + str(scanner_output[i][2]) + ' abortando..')
+                        print(error_list)
+                        return
+
+
+        if try_backtrack == True:
             
-        if try_backtrack:
-            print('Backtraking...')
             if not pile_backtrack:
-                print('Erro na linha ' + str(scanner_output[3]))
-                break
-            
+                error = True
+                error_list.append('Erro de celula nao preenchida na linha ' + str(scanner_output[i][2]))
+                if scanner_output[i][0] == '$' or scanner_output[i][0] in follow[pile[-1]].keys():
+                    pile.pop()
+                else:
+                    while (scanner_output[i][0] != '$') and ((scanner_output[i][0] not in first[pile[-1]]) and (scanner_output[i][0] not in follow[pile[-1]])):
+                        print('acrescentando 1 bt')
+                        i = i+1                
+                continue
+
             try_backtrack = False
             (i, backtracking_aux, pile) = pile_backtrack.pop()
             continue
-        break
         
-            
-            
+        if (pile[-1] == '$') and (scanner_output[i][0] == '$'):
+            if error == False:
+                print('arvore')
+                return
+            else:
+                print(error_list)
+                return
 
-parser(input_2)
+        else:
+            error_list.append('Erro critico na linha ' + scanner_output[i][2] + ' abortando..')
+            print(error_list)
+            return         
 
+parser(input_4)
