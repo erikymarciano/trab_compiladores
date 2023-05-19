@@ -1,0 +1,9 @@
+int integer_power(int number, int power)
+{
+    int res;
+    int i = 0;
+    while (i < power){
+        res = res + (number * number);
+        i = i + 1;
+    }
+}

@@ -2,6 +2,7 @@ import re
 from copy import deepcopy as clone
 from collections import defaultdict
 
+#region classes
 
 def subtract_list(listA:list, listB:list) -> list:
     return [o for o in listA if o not in listB]
@@ -10,26 +11,16 @@ def subtract_list(listA:list, listB:list) -> list:
 class Token:
     def __init__(self, nome:str, token:str, exp:str) -> None:
         self.nome = nome
-        self.token = token
+        self.token = self.treat_token(token)
         self.exp = exp
     
     def __str__(self) -> str:
         return "Token '{}':  {}".format(self.nome, self.token)
-    # INVALID = 'INVALIDO'
-    # NONE = 'NONE'
-    # QUERY = '?-'
-    # ATRIB = '::='
-    # PREDICATE = ':-'
-    # PIPE = '|'
-    # DOT = '.'
-    # COMMA = ','
-    # OPEN_PAREN = '('
-    # CLOSE_PAREN = ')'
-    # ATOM = 'ATOM'
-    # NUMERAL_INT = 'NUMERAL_INT'
-    # NUMERAL_FLOAT = 'NUMERAL_FLOAT'
-    # VARIABLE = 'VARIABLE'
-    # TOKEN_SEPARATOR = 'TOKEN_SEPARATOR'
+    
+    def treat_token(self, token:str) -> str:
+        if token.startswith('\\'):
+            return token[1:]
+        return token
     
 
 class Rule:
@@ -43,11 +34,13 @@ class Rule:
 
 
 class Automata:
-    def __init__(self, start_stage:int) -> None:
+    def __init__(self, token:Token, start_stage:int) -> None:
+        self.token = token
         self.rules = []
         self.final_stages = []
         self.start_stage = self.current_stage = start_stage
         self.paused = False
+        self.steps = 0
         self.stages = []
         self.terminals = []
         self.get_stages_from_rules()
@@ -63,8 +56,8 @@ class Automata:
         for r in self.rules:
             self.add_rules_info(r)
     
-    def is_stage_final(self, stage:int) -> bool:
-        return stage in self.final_stages
+    def at_final_stage(self) -> bool:
+        return self.current_stage in self.final_stages
     
     def add_rule(self, rule:Rule) -> None:
         self.rules.append(rule)
@@ -84,6 +77,7 @@ class Automata:
     def reset(self) -> None:
         self.current_stage = self.start_stage
         self.paused = False
+        self.steps = 0
     
 
 class AFN(Automata):
@@ -207,38 +201,48 @@ class AFD(Automata):
                 break
             pi = new_pi
         return pi
-    # def can_move_reading(self, char:str) -> bool:
-    #     match = re.match(self.exp, char)
-    #     return match != None and match.start() == 0
     
+    def move_reading(self, term:str) -> bool:
+        r = self.can_move(term)
+        if r:
+            self.current_stage = r.to_id
+            self.steps += 1
+            return True
+        return False
+    
+    def can_move(self, term:str) -> Rule:
+        if self.paused:
+            return None
+        for r in self.rules:
+            escaped_exp = re.escape(r.exp)
+            if r.exp.startswith('\\') or r.exp.startswith('['):
+                escaped_exp = r.exp
+            matched = re.match(escaped_exp, term)
+            if self.current_stage == r.from_id and matched:
+                return r
+        self.paused = True
+        return None
+    
+#endregion 
 
-
+rules_file = open('./rules.txt', 'w', encoding="utf-8")
+rules_file.close()
 types_file = open('./types.txt', 'r', encoding="utf-8")
 code_file = open('./code.txt', 'r', encoding="utf-8")
-rules_file = open('./rules.txt', 'w', encoding="utf-8")
  
-data_types = types_file.readlines()
-data = code_file.read()
+DATA_TYPES = types_file.readlines()
+INPUT_DATA = code_file.read()
  
 types_file.close()
 code_file.close()
-rules_file.close()
- 
-tokens_tuple = []
-automates = []
+
 EPSILON = 'ε'
-TOKENS_TO_FILTER = ['\n', ' ', '']
+TOKENS_SEPARATORS = ['\n', ' ', '']
 TOKEN_FILE_SEPARATOR = '; '
 TOKEN_TYPES = {'INVALID': Token('INVALID', 'INVALID', None)}
-UNIQUE_ID = 0
+UNIQUE_ID: int = 0
 
-
-valid_token_type = TOKEN_TYPES['INVALID']
-valid_token = ''
-possible_token = ''
-error_message_format =  "Error reading token '{}' at char '{}'"
-error_message = ''
-
+#region funções auxiliares para construcao dos automatos
 
 # Realiza o split do conteudo entre virgulas
 def split_pipe_exp(pipe_exp: str) -> list[str]:
@@ -364,83 +368,39 @@ def export_automates(automates:list[Automata]):
         rules_file.write(str(automata))        
     rules_file.close()
 
+#endregion
 
-def get_token_type(token: str) -> Token:
-    # if token == '':
-    #     return Token_Types.NONE
+#region funções auxiliares de manipulação 
+
+def try_get_token(afds:list[AFD]) -> Token:
+    steps = max([a.steps for a in afds])
+    # verifica se o maior é um estado final
+    greatests:list[AFD] = []
+    for afd in afds:
+        if afd.steps == steps:
+            greatests.append(afd)
     
-    # if token.strip() == '':
-    #     return Token_Types.TOKEN_SEPARATOR
+    for greatest in greatests:
+        if greatest.at_final_stage():
+            return greatest.token
     
-    # if '?-'.startswith(token):
-    #     return Token_Types.QUERY
-    
-    # if ':-'.startswith(token):
-    #     return Token_Types.PREDICATE
-    
-    # if '::='.startswith(token):
-    #     return Token_Types.ATRIB
-    
-    # if token == '|':
-    #     return Token_Types.PIPE
-    
-    # if token == '.':
-    #     return Token_Types.DOT
-    
-    # if token == ',':
-    #     return Token_Types.COMMA
-    
-    # if token == '(':
-    #     return Token_Types.OPEN_PAREN
-    
-    # if token == ')':
-    #     return Token_Types.CLOSE_PAREN
-    
-    # if compare_regex(token, '^[a-z]+[a-zA-Z0-9_]*$'):
-    #     return Token_Types.ATOM
-    
-    # if compare_regex(token, '^[A-Z_]+[a-zA-Z0-9_]*$'):
-    #     return Token_Types.VARIABLE
-    
-    # # deveria ter um token para os operadores 
-    
-    # if compare_regex(token, '^[-+]?\d+([eE][+-]?)?[\d+]?$'):
-    #     return Token_Types.NUMERAL_INT
-    
-    # if compare_regex(token, '^[-+]?\d+[\.]?[\d+]?([eE][-+]?)?[\d+]?$'):
-    #     return Token_Types.NUMERAL_FLOAT
-    
-    # return Token_Types.INVALID
-    pass
+    return TOKEN_TYPES['INVALID']
 
 
-def try_add_token(token: str) -> bool:
-    global valid_token
-    global possible_token
-    global valid_token_type
-    token_type = get_token_type(token)
-    if token_type == TOKEN_TYPES['INVALID']:
-        return False
-    tokens_tuple.append((token, token_type.value))
-    valid_token = possible_token = ''
-    valid_token_type = None
-    return True
+def is_separator_char(char:str) -> bool:
+    return char in TOKENS_SEPARATORS
 
 
-# Verifica se existe um caminho válido no automato para este token
-def can_be_a_valid_token(token: str) -> bool:
-    return get_token_type(token) != TOKEN_TYPES['INVALID']
-
-
-# Verifica se a posição atual do automato é estado final de um separador
-def is_separator_char(char: str) -> bool:
-    return char in TOKENS_TO_FILTER
+def reset_automates(automates_list:list[Automata]) -> None:
+    for a in automates_list:
+        a.reset()
 
 
 def extract_types(data_lines:list[str]) -> None:
     print('Reading tokens from file...')
     try:
         reading_comment = False
+        reading_separators = False
         for line in data_lines:
             line = line.strip()
             if not line:
@@ -451,6 +411,16 @@ def extract_types(data_lines:list[str]) -> None:
             if reading_comment:
                 reading_comment = (line != 'END COMMENT')
                 continue
+            if line == 'SEPARATORS':
+                reading_separators = True
+                continue
+            if reading_separators:
+                if line != 'END SEPARATORS':
+                    global TOKENS_SEPARATORS
+                    TOKENS_SEPARATORS.extend(list(line.split('; ')))
+                else:
+                    reading_separators = False
+                continue
             first_sep_index = line.find(TOKEN_FILE_SEPARATOR)
             last_sep_index = line.rfind(TOKEN_FILE_SEPARATOR)
             type_name, type_token, type_exp = line[:first_sep_index], line[first_sep_index + len(TOKEN_FILE_SEPARATOR):last_sep_index], line[last_sep_index + len(TOKEN_FILE_SEPARATOR):]
@@ -458,84 +428,81 @@ def extract_types(data_lines:list[str]) -> None:
     except:
         print("Error reading file of types!")
         exit(1)
+        
+    
+def get_input_data_line_index(char_index:int) -> int:
+    lines = INPUT_DATA.split('\n')
+    global_i = 0
+    for i in range(len(lines)):
+        global_i += len(lines[i]) + 1
+        if char_index < global_i:
+            return i + 1
+    return -1
+    
 
-data_pos = 0
-data_len = len(data)
-extract_types(data_types)
+#endregion
+
+
+token_automates: list[AFD] = []
+extract_types(DATA_TYPES)
 for k in TOKEN_TYPES:
     token = TOKEN_TYPES[k]
     if not token.exp:
         continue
     start_stage = UNIQUE_ID
-    automata = Automata(start_stage)
-    end_stage = compute_rule_for_exp(automata, start_stage, token.exp)
-    automata.set_final_stages([end_stage])
-    automates.append(automata)
+    automata_afn = AFN(token, start_stage)
+    end_stage = compute_rule_for_exp(automata_afn, start_stage, token.exp)
+    automata_afn.set_final_stages([end_stage])
+    automata_afd = AFD(token, start_stage)
+    automata_afd._transform_from_afn(automata_afn)
+    automata_afd._minimize()
+    token_automates.append(automata_afd)
     print('Token Found:\t', token)
     get_next_stage_id()
 
-export_automates(automates)
+export_automates(token_automates)
 print('Reading program...')
 
 
-dragonAFN = AFN(0)
-dragonAFN.add_rule(Rule(0, 1, EPSILON))
-dragonAFN.add_rule(Rule(0, 7, EPSILON))
-dragonAFN.add_rule(Rule(1, 2, EPSILON))
-dragonAFN.add_rule(Rule(1, 4, EPSILON))
-dragonAFN.add_rule(Rule(2, 3, 'a'))
-dragonAFN.add_rule(Rule(3, 6, EPSILON))
-dragonAFN.add_rule(Rule(4, 5, 'b'))
-dragonAFN.add_rule(Rule(5, 6, EPSILON))
-dragonAFN.add_rule(Rule(6, 1, EPSILON))
-dragonAFN.add_rule(Rule(6, 7, EPSILON))
-dragonAFN.add_rule(Rule(7, 8, 'a'))
-dragonAFN.add_rule(Rule(8, 9, 'b'))
-dragonAFN.add_rule(Rule(9, 10, 'b'))
-dragonAFN.set_final_stages([10])
-print('move: {}'.format(dragonAFN._move([0, 1, 2, 4, 7], 'a')))
-print('fechamentoE: {}'.format(dragonAFN._fechamentoE([3, 8])))
-
-dragonAFD = AFD(11)
-dragonAFD._transform_from_afn(dragonAFN)
-print(dragonAFD)
-dragonAFD._minimize()
-print(dragonAFD)
-
-exit()
+data_pos = 0
+data_len = len(INPUT_DATA)
+token_acc = ''
+tokens_scanned:list[(str, str, int)] = []
+scanner_error_message = ''
+scanner_error_format = "Error reading token '{}' at line {}:  Token is invalid!"
 while data_pos < data_len:
-    char = data[data_pos]
+    char = INPUT_DATA[data_pos]
+    
+    automates_rule = [a.move_reading(char) for a in token_automates]
+    # nenhum automato conseguiu ler o char
+    if all(not r for r in automates_rule):
+        line_pos = get_input_data_line_index(data_pos)
+        # verifica se está lendo ou se é um separador (como: ' ')
+        if is_separator_char(char) or is_separator_char(token_acc):
+            token_found = try_get_token(token_automates)
+            if token_found != TOKEN_TYPES['INVALID']:
+                # salva o token valido + posição na entrada
+                tokens_scanned.append((token_found.token, token_acc, line_pos))
+                token_acc = ''
+                reset_automates(token_automates)
+                continue
+        if not is_separator_char(char):
+            # throw invalid token error
+            token_acc += char
+            scanner_error_message = scanner_error_format.format(token_acc, line_pos)
+            break
+        
+        # reset to read next token 
+        token_acc = char = ''
+        reset_automates(token_automates)
+    
+    token_acc += char
     data_pos += 1
     
-    # if is_separator_char(char):
-    #     if valid_token:
-    #         has_token_error = try_add_token(valid_token, valid_token_type)
-    #         if (has_token_error):
-    #             print(error_message.format(valid_token, i))
-    #             exit(1)
-    #     continue
-    
-    possible_token += char
-    if not can_be_a_valid_token(possible_token):
-        if valid_token:
-            added_token = try_add_token(valid_token)
-            if not added_token:
-                error_message = error_message_format.format(possible_token, data_pos)
-                break
-            data_pos -= 1
-        else:
-            error_message = error_message_format.format(possible_token, data_pos)
-            break
-        continue
-    valid_token = possible_token
 
-
-
-# current_token_type = get_token_type(data, current_token)
-# try_add_token(current_token, current_token_type)
-
-for tuple in tokens_tuple:
+print('Printing scanned tokens...')
+for tuple in tokens_scanned:
     print(tuple)
 
-if error_message:
-    print(error_message)
+if scanner_error_message:
+    print(scanner_error_message)
