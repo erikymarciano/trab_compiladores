@@ -1,3 +1,5 @@
+from anytree import Node, RenderTree
+from copy import deepcopy
 from parser_data import *
 from bnf import *
 
@@ -12,7 +14,27 @@ simple_input = [
  ['=', '=', 8],
  ['number', '5', 9],
  [';', ';', 10],
+ ['}', '}', 10],
  ['$', '$', 11]
+]
+
+input_4 = [
+ ['int', 'int', 1], 
+ ['identifier', 'main', 2],
+ ['(', '(', 3],
+ ['int', 'int', 4],
+ ['identifier', 'haha', 5],
+ [')', ')', 6], 
+ ['{', '{', 7],
+ ['int', 'int', 8],
+ ['identifier', 'a', 9],
+ [';', ';', 12],
+ ['identifier', 'a', 9],
+ ['=', '=', 10],
+ ['number', '5', 11],
+ [';', ';', 12],
+ ['}', '}', 13],
+ ['$', '$', 14]
 ]
 
 input_2 = [
@@ -29,15 +51,15 @@ input_2 = [
  ['int', 'int', 11],
  ['identifier', 'hello', 12],
  [';', ';', 13],
- ['if', 'if', 11],
- ['(', '(', 12],
- ['number', '5', 13],
- ['==', '==', 13],
- ['number', '5', 13],
- [')', ')', 12],
- [';', ';', 12],
- ['else', 'else', 12],
- [';', ';', 12],
+#  ['if', 'if', 11],
+#  ['(', '(', 12],
+#  ['number', '5', 13],
+#  ['==', '==', 13],
+#  ['number', '5', 13],
+#  [')', ')', 12],
+#  [';', ';', 12],
+#  ['else', 'else', 12],
+#  [';', ';', 12],
  ['int', 'int', 14],
  ['identifier', 'i', 15],
  [';', ';', 16],
@@ -50,26 +72,34 @@ input_2 = [
 
 def parser(scanner_output):
     pile = ['$']
-    pile.extend(bnf_rules[0][::-1])
+    derivacao = bnf_rules[0][::-1]
+    pile.extend(derivacao)
     print(pile)
     
-    pile_backtrack:list[(int, int, list[str])] = []
+    pile_backtrack:list[(int, int, list[Node], list[str])] = [] # i_entrada, id_regra, no_pai, estado_lista_nos, estado_da_pilha
     try_backtrack = False
     backtracking_aux = None
     i = 0
+    tree = Node("<Function>")
+    tree_nodes = []
+    for item in derivacao:
+        node = Node(item, parent=tree)
+        tree_nodes.append(node)
     while(True):
         while pile[-1] != '$' and scanner_output[i] != '$':
-            if pile[-1] == '<ElsePart>':
-                pass
             if (pile[-1] == 'ε'):
                 pile.pop()
+                tree_nodes.pop()
                 print(pile)
             else:
                 print('Topo da pilha: '+pile[-1])
                 print('Token atual: '+scanner_output[i][0])
                 if (pile[-1] in terminals) and (pile[-1] == scanner_output[i][0]):
                     # match();
-                    pile.pop()
+                    node_name = pile.pop()
+                    node_parent = tree_nodes.pop()
+                    if node_name != node_parent.name:
+                        node = Node(node_name, parent=node_parent)
                     print(pile)
                     i = i+1
                 else:
@@ -80,11 +110,16 @@ def parser(scanner_output):
                     elif pile[-1] in table.keys() and scanner_output[i][0] in table[pile[-1]].keys():
                         aux = table[pile[-1]][scanner_output[i][0]]
                         for k in range(1, len(aux)):
-                            pile_backtrack.append((i + 1, aux[0], pile.copy()))
+                            pile_backtrack.append((i + 1, aux[0], deepcopy(tree_nodes), pile.copy()))
                     if (pile[-1] not in terminals) and (aux != None):
                         # producao()
-                        pile.pop()
-                        pile.extend(bnf_rules[aux[0]-1][::-1])
+                        node_name = pile.pop()
+                        node_parent = tree_nodes.pop()
+                        derivacao = bnf_rules[aux[0]-1][::-1]
+                        for item in derivacao:
+                            node = Node(item, parent=node_parent)
+                            tree_nodes.append(node)
+                        pile.extend(derivacao)
                         print(pile)
                     else:
                         try_backtrack = True
@@ -100,12 +135,20 @@ def parser(scanner_output):
                 break
             
             try_backtrack = False
-            (i, backtracking_aux, pile) = pile_backtrack.pop()
+            (i, backtracking_aux, pilha_nos, pile) = pile_backtrack.pop()
+            pai_errado = pilha_nos.pop()
+            tree_nodes = pilha_nos
+            tree_nodes.append(Node(pai_errado.name, pai_errado.parent))
             continue
         break
-        
+    
+    
+    tree_file = open('./tree.txt', 'w', encoding="utf-8")
+    for pre, _, node in RenderTree(tree):
+        tree_file.write("%s%s\n" % (pre, node.name))
+    tree_file.close()
             
             
 
-parser(input_2)
+parser(input_4)
 
