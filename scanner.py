@@ -504,7 +504,7 @@ print('Printing scanned tokens...')
 output = open('./scanner_output.txt', 'w', encoding="utf-8")
 for tuple in tokens_scanned:
     output.writelines(str(list(tuple)) + '\n')
-output.writelines(str(['$', '$', get_input_data_line_index(data_len)]))
+output.writelines(str(['$', '$', 0]))
 output.close()
 
 if scanner_error_message:
