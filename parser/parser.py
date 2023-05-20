@@ -10,20 +10,21 @@ for element in saida:
     formatted_output.append(eval(element))
 output_test.close()
 
-parser_error_messages = []
 
 def parser(scanner_output):
+    parser_error_messages = []
     pile = ['$']
     derivacao = bnf_rules[0][::-1]
     pile.extend(derivacao)
     print(pile)
     
-    pile_backtrack:list[(int, int, list[Node], list[str])] = [] # i_entrada, id_regra, estado_lista_nos, estado_da_pilha
+    pile_backtrack:list[(int, int, list[Node], list[str], list[str])] = [] # i_entrada, id_regra, estado_lista_nos, estado_da_pilha, lista_de_erros
     try_backtrack = False
     backtracking_aux = None
     i = 0
     tree = Node("<Function>")
     tree_nodes = []
+    parser_in_error = False
     for item in derivacao:
         node = Node(item, parent=tree)
         tree_nodes.append(node)
@@ -38,6 +39,7 @@ def parser(scanner_output):
                 print('Token atual: '+scanner_output[i][0])
                 if (pile[-1] in terminals) and (pile[-1] == scanner_output[i][0]):
                     # match();
+                    parser_in_error = False
                     node_name = pile.pop()
                     node_parent = tree_nodes.pop()
                     if node_name != node_parent.name:
@@ -52,9 +54,10 @@ def parser(scanner_output):
                     elif pile[-1] in table.keys() and scanner_output[i][0] in table[pile[-1]].keys():
                         aux = table[pile[-1]][scanner_output[i][0]]
                         for k in range(1, len(aux)):
-                            pile_backtrack.append((i, aux[0]-1, tree_nodes.copy(), pile.copy()))
+                            pile_backtrack.append((i, aux[k], tree_nodes.copy(), pile.copy(), parser_error_messages.copy()))
                     if (pile[-1] not in terminals) and (aux != None):
                         # producao()
+                        parser_in_error = False
                         node_name = pile.pop()
                         node_parent = tree_nodes.pop()
                         derivacao = bnf_rules[aux[0]-1][::-1]
@@ -69,29 +72,40 @@ def parser(scanner_output):
             
         if try_backtrack:
             if not pile_backtrack:
-                parser_error_messages.append('Erro na linha: {}, token {}'.format(scanner_output[i][2], scanner_output[i][1]))
+                if not parser_in_error:
+                    parser_error_messages.append('Erro na linha: {}, token {}'.format(scanner_output[i][2], scanner_output[i][1]))
+                parser_in_error = True
                 
+                if not pile or i >= len(scanner_output):
+                    break
+            
                 if pile[-1] in table.keys() and scanner_output[i][0] not in table[pile[-1]].keys():
                     if scanner_output[i][0] == '$' or (scanner_output[i][0] in follow[pile[-1]]):                            
                         pile.pop()   
-                    else:
-                        while (scanner_output[i][0] != '$') and ((scanner_output[i][0] not in first[pile[-1]]) and (scanner_output[i][0] not in follow[pile[-1]])):
-                            i = i+1
-                    continue
+                        continue
+                elif pile[-1] not in terminals:
+                    while (scanner_output[i][0] != '$') and ((scanner_output[i][0] not in first[pile[-1]]) and (scanner_output[i][0] not in follow[pile[-1]])):
+                        i = i+1
+                else:
+                    i = i + 1
+                    if i >= len(scanner_output):
+                        break
+                continue
                 
-                break
             
             print('Backtraking...')
+            
             try_backtrack = False
-            (i, backtracking_aux, pilha_nos, pile) = pile_backtrack.pop()
-            print((i, backtracking_aux, pilha_nos, pile))
+            (i, backtracking_aux, pilha_nos, pile, parser_error_messages) = pile_backtrack.pop()
+            # print((i, backtracking_aux, pilha_nos, pile))
+            parser_in_error = False
             tree_nodes = pilha_nos
             pai_errado = pilha_nos[-1]
             pai_errado.children = []
             continue
     
         
-        if pile[-1] != '$' or scanner_output[i][0] != '$':
+        if (pile[-1] != '$' or scanner_output[i][0] != '$') and not parser_in_error:
             parser_error_messages.append('Erro na linha: {}, token {}'.format(scanner_output[i][2], scanner_output[i][1]))
 
         break
