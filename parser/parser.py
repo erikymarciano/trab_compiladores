@@ -16,7 +16,6 @@ def parser(scanner_output):
     pile = ['$']
     derivacao = bnf_rules[0][::-1]
     pile.extend(derivacao)
-    print(pile)
     
     pile_backtrack:list[(int, int, list[Node], list[str], list[str])] = [] # i_entrada, id_regra, estado_lista_nos, estado_da_pilha, lista_de_erros
     try_backtrack = False
@@ -33,18 +32,13 @@ def parser(scanner_output):
             if (pile[-1] == 'ε'):
                 pile.pop()
                 tree_nodes.pop()
-                print(pile)
             else:
-                print('Topo da pilha: '+pile[-1])
-                print('Token atual: '+scanner_output[i][0])
                 if (pile[-1] in terminals) and (pile[-1] == scanner_output[i][0]):
-                    # match();
                     parser_in_error = False
                     node_name = pile.pop()
                     node_parent = tree_nodes.pop()
                     if node_name != node_parent.name:
                         node = Node(node_name, parent=node_parent)
-                    print(pile)
                     i = i+1
                 else:
                     
@@ -56,7 +50,6 @@ def parser(scanner_output):
                         for k in range(1, len(aux)):
                             pile_backtrack.append((i, aux[k], tree_nodes.copy(), pile.copy(), parser_error_messages.copy()))
                     if (pile[-1] not in terminals) and (aux != None):
-                        # producao()
                         parser_in_error = False
                         node_name = pile.pop()
                         node_parent = tree_nodes.pop()
@@ -65,7 +58,6 @@ def parser(scanner_output):
                             node = Node(item, parent=node_parent)
                             tree_nodes.append(node)
                         pile.extend(derivacao)
-                        print(pile)
                     else:
                         try_backtrack = True
                         break
@@ -92,14 +84,14 @@ def parser(scanner_output):
                         break
                 
                 if pile[-1] == '$':
+                    parser_error_messages.append('O parser não conseguiu reinicializar.')
                     pile.pop()
                     break
                 
                 continue
                 
             
-            print('Backtraking...')
-            
+            print('Backtraking...')            
             try_backtrack = False
             (i, backtracking_aux, pilha_nos, pile, parser_error_messages) = pile_backtrack.pop()
             # print((i, backtracking_aux, pilha_nos, pile))
@@ -120,6 +112,7 @@ def parser(scanner_output):
     if not parser_error_messages:
         for pre, _, node in RenderTree(tree):
             tree_file.write("%s%s\n" % (pre, node.name))
+        print("[Arvore Gerada]")
     else:
         print("[Parser Error]")
         tree_file.write('\n'.join(parser_error_messages))
