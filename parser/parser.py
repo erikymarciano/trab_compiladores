@@ -76,7 +76,7 @@ def parser(scanner_output):
                     parser_error_messages.append('Erro na linha: {}, token {}'.format(scanner_output[i][2], scanner_output[i][1]))
                 parser_in_error = True
                 
-                if not pile or i >= len(scanner_output):
+                if (not pile) or i >= len(scanner_output):
                     break
             
                 if pile[-1] in table.keys() and scanner_output[i][0] not in table[pile[-1]].keys():
@@ -90,6 +90,11 @@ def parser(scanner_output):
                     i = i + 1
                     if i >= len(scanner_output):
                         break
+                
+                if pile[-1] == '$':
+                    pile.pop()
+                    break
+                
                 continue
                 
             
