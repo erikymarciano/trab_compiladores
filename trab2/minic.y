@@ -4,7 +4,7 @@
  */
 
 %{
-
+#include<stdio.h>
 %}
 
 %token INT FLOAT CHAR
@@ -17,51 +17,32 @@
 %token NUMBER
 %token ID
 
-%start function
-
 %%
 
-function
-	: type ID LBRACKET arg_list RBRACKET compound_stmt
-	| type ID LBRACKET arg_list RBRACKET compound_stmt function_
+function:
+	| type ID LBRACKET arg_list RBRACKET compound_stmt function 
 	;
 
-function_
-	: function
+arg_list: arg
+	| arg_list COMMA arg
 	;
 
-arg_list
-	: arg arg_list_
+arg: type ID 
 	;
 
-arg_list_
-	: COMMA arg arg_list_
+declaration: type ident_list PCOMMA
 	;
 
-arg
-	: type ID 
-	;
-
-declaration
-	: type ident_list PCOMMA
-	;
-
-type
-	: INT 
+type: INT 
 	| FLOAT 
 	| CHAR 
 	;
 
-ident_list
-	: ID ident_list_ 
+ident_list: ID COMMA ident_list
+	| ID
 	;
 
-ident_list_
-	: COMMA ident_list
-	;
-
-stmt
-	: for_stmt 
+stmt: for_stmt 
 	| while_stmt 
 	| expr PCOMMA 
 	| if_stmt 
@@ -70,50 +51,39 @@ stmt
 	| PCOMMA 
 	;
 
-for_stmt
-	: FOR LBRACKET expr PCOMMA opt_expr PCOMMA opt_expr RBRACKET stmt
+for_stmt: FOR LBRACKET expr PCOMMA opt_expr PCOMMA opt_expr RBRACKET stmt
 	;
 
-opt_expr
-	: expr
+opt_expr: expr
+	|
 	;
 
-while_stmt
-	: WHILE LBRACKET expr RBRACKET stmt 
+while_stmt: WHILE LBRACKET expr RBRACKET stmt 
 	;
 
-if_stmt
-	: IF LBRACKET expr RBRACKET stmt else_part
+if_stmt: IF LBRACKET expr RBRACKET stmt else_part
 	;
 
-else_part
-	: ELSE stmt
+else_part: ELSE stmt
+	|
 	;
 
-compound_stmt
-	: LBRACE stmt_list RBRACE
+compound_stmt: LBRACE stmt_list RBRACE
 	;
 
-stmt_list
-	: stmt stmt_list
-	| function stmt_list
+stmt_list: stmt_list stmt
+	|
 	;
 
-expr
-	: ID ATTR expr
+expr: ID ATTR expr
 	| r_value
 	;
 
-r_value
-	: mag r_value_
+r_value: r_value compare mag
+	| mag
 	;
 
-r_value_
-	: compare mag r_value_
-	;
-
-compare
-	: EQ 
+compare: EQ 
 	| LT
 	| GT
 	| LE
@@ -122,25 +92,17 @@ compare
 	;
 
 mag
-	: term mag_
+	: mag PLUS term
+	| mag MINUS term
+	| term
 	;
 
-mag_
-	: PLUS term mag_
-	| MINUS term mag_
+term: term MULT factor
+	| term DIV factor
+	| factor
 	;
 
-term
-	: factor term_
-	;
-
-term_
-	: MULT factor term_
-	| DIV factor term_
-	;
-
-factor
-	: LBRACKET expr RBRACKET
+factor: LBRACKET expr RBRACKET
 	| MINUS factor
 	| PLUS factor
 	| ID
@@ -148,18 +110,15 @@ factor
 	| CHAR
 	;
 
-
-
 %%
-#include <stdio.h>
 
-extern char yytext[];
-extern int column;
-
-yyerror(s)
-char *s;
+int yyerror(char *s)
 {
-	fflush(stdout);
-	printf("\n%*s\n%*s\n", column, "^", column, s);
+  fprintf(stderr, "error: %s\n", s);
+}
+
+void main(int argc, char **argv)
+{
+  yyparse();
 }
 
