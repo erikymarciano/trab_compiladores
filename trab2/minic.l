@@ -17,6 +17,7 @@ typedef struct node {
 } node_t;
 
 node_t*head = NULL, *temp=NULL, *current=NULL;
+char LastDT[10];
 %}
 
 
@@ -26,16 +27,9 @@ node_t*head = NULL, *temp=NULL, *current=NULL;
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
 	} else{
-		if (temp == NULL){
-			temp = (struct node*)malloc(sizeof(struct node));
-			head->next = temp;
-		}
-		else {
-			temp->next=(struct node*)malloc(sizeof(struct node));
-			temp = (node_t*)temp->next;
-		}
 		strcpy(temp->DataType, yytext);
 	}
+	strcpy(LastDT, yytext);
 	count(); 
 	return INT; 
 }
@@ -44,16 +38,9 @@ node_t*head = NULL, *temp=NULL, *current=NULL;
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
 	} else{
-		if (temp == NULL){
-			temp = (struct node*)malloc(sizeof(struct node));
-			head->next = temp;
-		}
-		else {
-			temp->next=(struct node*)malloc(sizeof(struct node));
-			temp = (node_t*)temp->next;
-		}
 		strcpy(temp->DataType, yytext);
 	}
+	strcpy(LastDT, yytext);
 	count(); 
 	return FLOAT; 
 }
@@ -62,16 +49,9 @@ node_t*head = NULL, *temp=NULL, *current=NULL;
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
 	} else{
-		if (temp == NULL){
-			temp = (struct node*)malloc(sizeof(struct node));
-			head->next = temp;
-		}
-		else {
-			temp->next=(struct node*)malloc(sizeof(struct node));
-			temp = (node_t*)temp->next;
-		}
 		strcpy(temp->DataType, yytext);
 	}
+	strcpy(LastDT, yytext);
 	count(); 
 	return CHAR; 
 }
@@ -83,10 +63,17 @@ node_t*head = NULL, *temp=NULL, *current=NULL;
 {L}({L}|{D})*	{
 	if(head->next == NULL){
 		strcpy(head->ID, yytext);
-		head->next = NULL;
+		temp = (struct node*)malloc(sizeof(struct node));
+		head->next = temp;
 	} else{
 		strcpy(temp->ID, yytext);
-		temp->next = NULL;
+		if (temp->DataType[0] == NULL){
+			strcpy(temp->DataType, LastDT);
+		}
+		if (temp->next == NULL){
+			temp->next = (struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
 	}
 	count();
 	return ID; 
@@ -98,33 +85,10 @@ node_t*head = NULL, *temp=NULL, *current=NULL;
 ">="			{ count(); return GE; }
 "=="			{ count(); return EQ; }
 "!="			{ count(); return NE; }
-";"			{ 
-	if(temp==NULL){
-		temp=(struct node*)malloc(sizeof(struct node));
-		head->next=temp;
-	} else {
-		temp->next=(struct node*)malloc(sizeof(struct node));
-		temp = (node_t*)temp->next;
-	}
-	count(); 
-	return PCOMMA; 
-	}
+";"			{ count(); return PCOMMA; }
 "{"		{ count(); return LBRACE; }
 "}"		{ count(); return RBRACE; }
-","			{ 
-	if(temp == NULL){
-		temp = (struct node*)malloc(sizeof(struct node));
-		head->next = temp;
-		strcpy(temp->DataType, head->DataType);
-	} else if(yytext != ","){
-		temp->next=(struct node*)malloc(sizeof(struct node));
-		temp = (node_t*)temp->next;		
-		strcpy(temp->DataType, yytext);
-	}
-	
-	count(); 
-	return COMMA; 
-}
+","			{ count(); return COMMA; }
 "="			{ count(); return ATTR; }
 "("			{ count(); return LBRACKET; }
 ")"			{ count(); return RBRACKET; }
