@@ -10,14 +10,16 @@ void count();
 #include <stdio.h>
 #include <string.h>
 #include "minic.tab.h"
+#define MAXTOKENLEN = 45
+
 typedef struct node {
 	int NodeID;
-	char ID[10], DataType[10];
+	char ID[MAXTOKENLEN], DataType[MAXTOKENLEN];
 	struct node *next;
 } node_t;
 
 node_t*head = NULL, *temp=NULL, *current=NULL;
-char LastDT[10];
+char LastDT[MAXTOKENLEN];
 %}
 
 
