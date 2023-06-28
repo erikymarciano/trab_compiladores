@@ -351,8 +351,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 29
-#define YY_END_OF_BUFFER 30
+#define YY_NUM_RULES 30
+#define YY_END_OF_BUFFER 31
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -362,7 +362,7 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[56] =
     {   0,
-        0,    0,   30,   28,   27,   27,   28,   19,   20,   23,
+        0,    0,   31,   28,   27,   29,   28,   19,   20,   23,
        22,   17,   21,   24,    9,   14,   25,   18,   26,    8,
         8,    8,    8,    8,    8,   15,   16,   13,    0,    9,
        10,   12,   11,    8,    8,    8,    8,    8,    4,    8,
@@ -481,11 +481,17 @@ char *yytext;
 
 void count();
 #include <stdio.h>
+#include <string.h>
 #include "minic.tab.h"
+typedef struct node {
+	int NodeID;
+	char ID[10], DataType[10];
+	struct node *next;
+} node_t;
 
-
-#line 488 "lex.yy.c"
-#line 489 "lex.yy.c"
+node_t*head = NULL, *temp=NULL, *current=NULL;
+#line 494 "lex.yy.c"
+#line 495 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -702,9 +708,9 @@ YY_DECL
 		}
 
 	{
-#line 17 "minic.l"
+#line 23 "minic.l"
 
-#line 708 "lex.yy.c"
+#line 714 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -763,151 +769,244 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 18 "minic.l"
-{ count(); return INT; }
+#line 24 "minic.l"
+{ 
+	if(head == NULL){
+		head = (node_t*) malloc(sizeof(node_t)); 
+		strcpy(head->DataType, yytext);
+	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node));
+			head->next = temp;
+		}
+		else {
+			temp->next=(struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
+		strcpy(temp->DataType, yytext);
+	}
+	count(); 
+	return INT; 
+}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 19 "minic.l"
-{ count(); return FLOAT; }
+#line 42 "minic.l"
+{ 
+	if(head == NULL){
+		head = (node_t*) malloc(sizeof(node_t)); 
+		strcpy(head->DataType, yytext);
+	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node));
+			head->next = temp;
+		}
+		else {
+			temp->next=(struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
+		strcpy(temp->DataType, yytext);
+	}
+	count(); 
+	return FLOAT; 
+}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 20 "minic.l"
-{ count(); return CHAR; }
+#line 60 "minic.l"
+{ 
+	if(head == NULL){
+		head = (node_t*) malloc(sizeof(node_t)); 
+		strcpy(head->DataType, yytext);
+	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node));
+			head->next = temp;
+		}
+		else {
+			temp->next=(struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
+		strcpy(temp->DataType, yytext);
+	}
+	count(); 
+	return CHAR; 
+}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 21 "minic.l"
+#line 78 "minic.l"
 { count(); return IF; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 22 "minic.l"
+#line 79 "minic.l"
 { count(); return ELSE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 23 "minic.l"
+#line 80 "minic.l"
 { count(); return WHILE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 24 "minic.l"
+#line 81 "minic.l"
 { count(); return FOR; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 26 "minic.l"
-{ count(); return ID; }
+#line 83 "minic.l"
+{
+	if(head->next == NULL){
+		strcpy(head->ID, yytext);
+		head->next = NULL;
+	} else{
+		strcpy(temp->ID, yytext);
+		temp->next = NULL;
+	}
+	count();
+	return ID; 
+}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 28 "minic.l"
-{ count(); yylval = atoi(yytext); return NUMBER; }
+#line 95 "minic.l"
+{ count(); return NUMBER; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 30 "minic.l"
+#line 97 "minic.l"
 { count(); return LE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 31 "minic.l"
+#line 98 "minic.l"
 { count(); return GE; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 32 "minic.l"
+#line 99 "minic.l"
 { count(); return EQ; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 33 "minic.l"
+#line 100 "minic.l"
 { count(); return NE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 34 "minic.l"
-{ count(); return PCOMMA; }
+#line 101 "minic.l"
+{ 
+	if(temp==NULL){
+		temp=(struct node*)malloc(sizeof(struct node));
+		head->next=temp;
+	} else {
+		temp->next=(struct node*)malloc(sizeof(struct node));
+		temp = (node_t*)temp->next;
+	}
+	count(); 
+	return PCOMMA; 
+	}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 35 "minic.l"
+#line 112 "minic.l"
 { count(); return LBRACE; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 36 "minic.l"
+#line 113 "minic.l"
 { count(); return RBRACE; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 37 "minic.l"
-{ count(); return COMMA; }
+#line 114 "minic.l"
+{ 
+	if(temp == NULL){
+		temp = (struct node*)malloc(sizeof(struct node));
+		head->next = temp;
+		strcpy(temp->DataType, head->DataType);
+	} else {
+		temp = (node_t*)temp->next;
+	}
+	
+	count(); 
+	return COMMA; 
+}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 38 "minic.l"
+#line 126 "minic.l"
 { count(); return ATTR; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 39 "minic.l"
+#line 127 "minic.l"
 { count(); return LBRACKET; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 40 "minic.l"
+#line 128 "minic.l"
 { count(); return RBRACKET; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 41 "minic.l"
+#line 129 "minic.l"
 { count(); return MINUS; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 42 "minic.l"
+#line 130 "minic.l"
 { count(); return PLUS; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 43 "minic.l"
+#line 131 "minic.l"
 { count(); return MULT; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 44 "minic.l"
+#line 132 "minic.l"
 { count(); return DIV; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 45 "minic.l"
+#line 133 "minic.l"
 { count(); return LT; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 46 "minic.l"
+#line 134 "minic.l"
 { count(); return GT; }
 	YY_BREAK
 case 27:
-/* rule 27 can match eol */
 YY_RULE_SETUP
-#line 48 "minic.l"
+#line 136 "minic.l"
 { count(); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 49 "minic.l"
+#line 138 "minic.l"
 { /* ignore bad characters */ }
 	YY_BREAK
 case 29:
+/* rule 29 can match eol */
 YY_RULE_SETUP
-#line 51 "minic.l"
+#line 140 "minic.l"
+{
+	node_t *current = head;
+	while(current!=NULL){
+		printf("%s\t%s\n", current->ID, current->DataType);
+		current = current->next;
+	}
+}
+	YY_BREAK
+case 30:
+YY_RULE_SETUP
+#line 148 "minic.l"
 ECHO;
 	YY_BREAK
-#line 911 "lex.yy.c"
+#line 1010 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1912,7 +2011,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 51 "minic.l"
+#line 148 "minic.l"
 
 
 int column = 0;

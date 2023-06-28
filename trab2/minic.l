@@ -8,33 +8,123 @@ L			[a-zA-Z_]
 
 void count();
 #include <stdio.h>
+#include <string.h>
 #include "minic.tab.h"
+typedef struct node {
+	int NodeID;
+	char ID[10], DataType[10];
+	struct node *next;
+} node_t;
 
-
+node_t*head = NULL, *temp=NULL, *current=NULL;
 %}
 
 
 %%
-"int"			{ count(); return INT; }
-"float"			{ count(); return FLOAT; }
-"char"			{ count(); return CHAR; }
+"int"			{ 
+	if(head == NULL){
+		head = (node_t*) malloc(sizeof(node_t)); 
+		strcpy(head->DataType, yytext);
+	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node));
+			head->next = temp;
+		}
+		else {
+			temp->next=(struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
+		strcpy(temp->DataType, yytext);
+	}
+	count(); 
+	return INT; 
+}
+"float"			{ 
+	if(head == NULL){
+		head = (node_t*) malloc(sizeof(node_t)); 
+		strcpy(head->DataType, yytext);
+	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node));
+			head->next = temp;
+		}
+		else {
+			temp->next=(struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
+		strcpy(temp->DataType, yytext);
+	}
+	count(); 
+	return FLOAT; 
+}
+"char"			{ 
+	if(head == NULL){
+		head = (node_t*) malloc(sizeof(node_t)); 
+		strcpy(head->DataType, yytext);
+	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node));
+			head->next = temp;
+		}
+		else {
+			temp->next=(struct node*)malloc(sizeof(struct node));
+			temp = (node_t*)temp->next;
+		}
+		strcpy(temp->DataType, yytext);
+	}
+	count(); 
+	return CHAR; 
+}
 "if"			{ count(); return IF; }
 "else"			{ count(); return ELSE; }
 "while"			{ count(); return WHILE; }
 "for"			{ count(); return FOR; }
 
-{L}({L}|{D})*	{ count(); return ID; }
+{L}({L}|{D})*	{
+	if(head->next == NULL){
+		strcpy(head->ID, yytext);
+		head->next = NULL;
+	} else{
+		strcpy(temp->ID, yytext);
+		temp->next = NULL;
+	}
+	count();
+	return ID; 
+}
 
-{D}+("."{D})*	{ count(); yylval = atoi(yytext); return NUMBER; }
+{D}+("."{D})*	{ count(); return NUMBER; }
 
 "<="			{ count(); return LE; }
 ">="			{ count(); return GE; }
 "=="			{ count(); return EQ; }
 "!="			{ count(); return NE; }
-";"			{ count(); return PCOMMA; }
+";"			{ 
+	if(temp==NULL){
+		temp=(struct node*)malloc(sizeof(struct node));
+		head->next=temp;
+	} else {
+		temp->next=(struct node*)malloc(sizeof(struct node));
+		temp = (node_t*)temp->next;
+	}
+	count(); 
+	return PCOMMA; 
+	}
 "{"		{ count(); return LBRACE; }
 "}"		{ count(); return RBRACE; }
-","			{ count(); return COMMA; }
+","			{ 
+	if(temp == NULL){
+		temp = (struct node*)malloc(sizeof(struct node));
+		head->next = temp;
+		strcpy(temp->DataType, head->DataType);
+	} else if(yytext != ","){
+		temp->next=(struct node*)malloc(sizeof(struct node));
+		temp = (node_t*)temp->next;		
+		strcpy(temp->DataType, yytext);
+	}
+	
+	count(); 
+	return COMMA; 
+}
 "="			{ count(); return ATTR; }
 "("			{ count(); return LBRACKET; }
 ")"			{ count(); return RBRACKET; }
@@ -45,8 +135,17 @@ void count();
 "<"			{ count(); return LT; }
 ">"			{ count(); return GT; }
 
-[ \t\v\n\f]		{ count(); }
+[ \t\v\f]		{ count(); }
+
 .			{ /* ignore bad characters */ }
+
+"\n" {
+	node_t *current = head;
+	while(current!=NULL){
+		printf("%s\t%s\n", current->ID, current->DataType);
+		current = current->next;
+	}
+}
 
 %%
 

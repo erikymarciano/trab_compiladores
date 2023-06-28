@@ -27,7 +27,7 @@ arg_list: arg
 	| arg_list COMMA arg
 	;
 
-arg: type ID 
+arg: type ID
 	;
 
 declaration: type ident_list PCOMMA
