@@ -10,16 +10,18 @@ void count();
 #include <stdio.h>
 #include <string.h>
 #include "minic.tab.h"
-#define MAXTOKENLEN = 45
+#define MAXTOKENLEN 45
 
 typedef struct node {
-	int NodeID;
+	int NodeID, IsFunction;
 	char ID[MAXTOKENLEN], DataType[MAXTOKENLEN];
 	struct node *next;
 } node_t;
 
 node_t*head = NULL, *temp=NULL, *current=NULL;
 char LastDT[MAXTOKENLEN];
+int isDeclaration;
+int isFunction = 1;
 %}
 
 
@@ -28,33 +30,42 @@ char LastDT[MAXTOKENLEN];
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
+		head->NodeID = 1;
+		head->IsFunction = isFunction;
 	} else{
 		strcpy(temp->DataType, yytext);
 	}
 	strcpy(LastDT, yytext);
 	count(); 
+	isDeclaration = 1;
 	return INT; 
 }
 "float"			{ 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
+		head->NodeID = 1;
+		head->IsFunction = isFunction;
 	} else{
 		strcpy(temp->DataType, yytext);
 	}
 	strcpy(LastDT, yytext);
 	count(); 
+	isDeclaration = 1;
 	return FLOAT; 
 }
 "char"			{ 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
+		head->NodeID = 1;
+		head->IsFunction = isFunction;
 	} else{
 		strcpy(temp->DataType, yytext);
 	}
 	strcpy(LastDT, yytext);
 	count(); 
+	isDeclaration = 1;
 	return CHAR; 
 }
 "if"			{ count(); return IF; }
@@ -67,13 +78,15 @@ char LastDT[MAXTOKENLEN];
 		strcpy(head->ID, yytext);
 		temp = (struct node*)malloc(sizeof(struct node));
 		head->next = temp;
-	} else{
+		temp->NodeID = head->NodeID + 1;
+	} else if (isDeclaration){
 		strcpy(temp->ID, yytext);
 		if (temp->DataType[0] == NULL){
 			strcpy(temp->DataType, LastDT);
 		}
 		if (temp->next == NULL){
 			temp->next = (struct node*)malloc(sizeof(struct node));
+			temp->next->NodeID = temp->NodeID + 1;
 			temp = (node_t*)temp->next;
 		}
 	}
@@ -90,7 +103,7 @@ char LastDT[MAXTOKENLEN];
 ";"			{ count(); return PCOMMA; }
 "{"		{ count(); return LBRACE; }
 "}"		{ count(); return RBRACE; }
-","			{ count(); return COMMA; }
+","			{ count(); isDeclaration = 1; return COMMA; }
 "="			{ count(); return ATTR; }
 "("			{ count(); return LBRACKET; }
 ")"			{ count(); return RBRACKET; }
@@ -99,16 +112,18 @@ char LastDT[MAXTOKENLEN];
 "*"			{ count(); return MULT; }
 "/"			{ count(); return DIV; }
 "<"			{ count(); return LT; }
-">"			{ count(); return GT; }
+">"			{ count();return GT; }
 
-[ \t\v\f]		{ count(); }
+[ \t\v\f]		{ int tempDeclaration = isDeclaration; count();  isDeclaration = tempDeclaration; }
 
 .			{ /* ignore bad characters */ }
 
 "\n" {
 	node_t *current = head;
+	printf("|#\t|ID\t|TYPE\t|FUNC\n");
+	printf("| \t|  \t|    \t|    \n");
 	while(current!=NULL){
-		printf("%s\t%s\n", current->ID, current->DataType);
+		printf("|%d\t|%s\t|%s\t|%d\n",current->NodeID, current->ID, current->DataType, current->IsFunction);
 		current = current->next;
 	}
 }
@@ -130,4 +145,6 @@ void count()
 			column++; 
 
 	/*ECHO*/;
+
+	isDeclaration = 0;
 }

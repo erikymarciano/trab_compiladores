@@ -1,1 +1,1 @@
-int main(float parama, int paramb){int hello, bye;}
+int main(float parama, int paramb){int hello, bye; bye = 5;}
