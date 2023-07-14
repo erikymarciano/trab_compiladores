@@ -4,24 +4,25 @@ L			[a-zA-Z_]
 
 %{
 
-/* this scanner sourced from: http://www.lysator.liu.se/c/ANSI-C-grammar-l.html */
+    /* this scanner sourced from: http://www.lysator.liu.se/c/ANSI-C-grammar-l.html */
 
-void count();
-#include <stdio.h>
-#include <string.h>
-#include "minic.tab.h"
-#define MAXTOKENLEN 45
+    void count();
+    #include <stdio.h>
+    #include <string.h>
+    #include "minic.tab.h"
+    int cur_funcID = 1, id_counter = 1;
+    int func_declaration = 0;
+    int scope_counter = 0;
 
-typedef struct node {
-	int NodeID, IsFunction;
-	char ID[MAXTOKENLEN], DataType[MAXTOKENLEN];
-	struct node *next;
-} node_t;
+    typedef struct node {
+	    int NodeID;
+	    char ID[10], DataType[10];
+        int Scope;
+        int IsFunc;
+	    struct node *next;
+    } node_t;
 
-node_t*head = NULL, *temp=NULL, *current=NULL;
-char LastDT[MAXTOKENLEN];
-int isDeclaration;
-int isFunction = 1;
+    node_t*head = NULL, *temp=NULL, *current=NULL;
 %}
 
 
@@ -29,43 +30,69 @@ int isFunction = 1;
 "int"			{ 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
+        head->NodeID = id_counter++;
 		strcpy(head->DataType, yytext);
-		head->NodeID = 1;
-		head->IsFunction = isFunction;
+        head->Scope = scope_counter;
 	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node)); 
+            temp->NodeID = id_counter++;
+			head->next = temp;
+		}
+		else if (temp->next == NULL) {
+			temp->next=(struct node*)malloc(sizeof(struct node)); 
+            temp->next->NodeID = id_counter++;
+			temp = (node_t*)temp->next;
+		}else{
+			temp = (node_t*)temp->next;   
+        }
 		strcpy(temp->DataType, yytext);
 	}
-	strcpy(LastDT, yytext);
 	count(); 
-	isDeclaration = 1;
 	return INT; 
 }
 "float"			{ 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
-		head->NodeID = 1;
-		head->IsFunction = isFunction;
 	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node)); 
+            temp->NodeID = id_counter++;
+			head->next = temp;
+		}
+		else if (temp->next == NULL) {
+			temp->next=(struct node*)malloc(sizeof(struct node)); 
+            temp->next->NodeID = id_counter++;
+			temp = (node_t*)temp->next;
+		}else{
+			temp = (node_t*)temp->next;   
+        }
 		strcpy(temp->DataType, yytext);
 	}
-	strcpy(LastDT, yytext);
 	count(); 
-	isDeclaration = 1;
 	return FLOAT; 
 }
 "char"			{ 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
-		head->NodeID = 1;
-		head->IsFunction = isFunction;
 	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node)); 
+            temp->NodeID = id_counter++;
+			head->next = temp;
+		}
+		else if (temp->next == NULL) {
+			temp->next=(struct node*)malloc(sizeof(struct node)); 
+            temp->next->NodeID = id_counter++;
+			temp = (node_t*)temp->next;
+		}else{
+			temp = (node_t*)temp->next;   
+        }
 		strcpy(temp->DataType, yytext);
 	}
-	strcpy(LastDT, yytext);
 	count(); 
-	isDeclaration = 1;
 	return CHAR; 
 }
 "if"			{ count(); return IF; }
@@ -76,20 +103,28 @@ int isFunction = 1;
 {L}({L}|{D})*	{
 	if(head->next == NULL){
 		strcpy(head->ID, yytext);
-		temp = (struct node*)malloc(sizeof(struct node));
-		head->next = temp;
-		temp->NodeID = head->NodeID + 1;
-	} else if (isDeclaration){
+        head->Scope = scope_counter;
+        head->IsFunc = func_declaration;
+	} else if (temp->next == NULL){
 		strcpy(temp->ID, yytext);
-		if (temp->DataType[0] == NULL){
-			strcpy(temp->DataType, LastDT);
-		}
-		if (temp->next == NULL){
-			temp->next = (struct node*)malloc(sizeof(struct node));
-			temp->next->NodeID = temp->NodeID + 1;
-			temp = (node_t*)temp->next;
-		}
+        temp->Scope = scope_counter;
+        temp->IsFunc = func_declaration;
+	} else{
+		temp = (node_t*)temp->next;
+		strcpy(temp->ID, yytext);
+        temp->Scope = scope_counter;
+        temp->IsFunc = func_declaration;
 	}
+    
+    if (func_declaration){
+        if (head->next == NULL) {
+            cur_funcID = head->NodeID;
+        }
+        else {
+            cur_funcID = temp->NodeID;
+        }
+    }    
+
 	count();
 	return ID; 
 }
@@ -103,7 +138,21 @@ int isFunction = 1;
 ";"			{ count(); return PCOMMA; }
 "{"		{ count(); return LBRACE; }
 "}"		{ count(); return RBRACE; }
-","			{ count(); isDeclaration = 1; return COMMA; }
+","			{ 
+	if(temp == NULL){
+		temp = (struct node*)malloc(sizeof(struct node)); 
+        temp->NodeID = id_counter++;
+		head->next = temp;
+		strcpy(temp->DataType, head->DataType);
+	} else {
+		temp->next=(struct node*)malloc(sizeof(struct node)); 
+        temp->next->NodeID = id_counter++;
+		strcpy(temp->next->DataType, temp->DataType);
+	}
+	
+	count(); 
+	return COMMA; 
+}
 "="			{ count(); return ATTR; }
 "("			{ count(); return LBRACKET; }
 ")"			{ count(); return RBRACKET; }
@@ -112,18 +161,17 @@ int isFunction = 1;
 "*"			{ count(); return MULT; }
 "/"			{ count(); return DIV; }
 "<"			{ count(); return LT; }
-">"			{ count();return GT; }
+">"			{ count(); return GT; }
 
-[ \t\v\f]		{ int tempDeclaration = isDeclaration; count();  isDeclaration = tempDeclaration; }
+[ \t\v\f]		{ count(); }
 
 .			{ /* ignore bad characters */ }
 
 "\n" {
 	node_t *current = head;
-	printf("|#\t|ID\t|TYPE\t|FUNC\n");
-	printf("| \t|  \t|    \t|    \n");
+    printf("#\tID\tFUNC\tTYPE\tSCOPE_ID\n");
 	while(current!=NULL){
-		printf("|%d\t|%s\t|%s\t|%d\n",current->NodeID, current->ID, current->DataType, current->IsFunction);
+		printf("%d\t%s\t%d\t%s\t%d\n", current->NodeID, current->ID, current->IsFunc, current->DataType, current->Scope);
 		current = current->next;
 	}
 }
@@ -145,6 +193,4 @@ void count()
 			column++; 
 
 	/*ECHO*/;
-
-	isDeclaration = 0;
 }
