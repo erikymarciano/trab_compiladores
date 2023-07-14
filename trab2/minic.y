@@ -4,8 +4,14 @@
  */
 
 %{
-#include<stdio.h>
+    #include<stdio.h>
+    
+    int cur_func_scope;
+    extern int func_declaration;
+    extern int scope_counter;
+    extern int cur_funcID;
 %}
+
 
 %token INT FLOAT CHAR
 %token IF ELSE WHILE FOR
@@ -20,7 +26,7 @@
 %%
 
 function:
-	| type ID LBRACKET arg_list RBRACKET compound_stmt function 
+	| { func_declaration = 1; cur_func_scope = scope_counter; } type ID { func_declaration = 0; } LBRACKET arg_list RBRACKET { scope_counter = cur_funcID; } compound_stmt { scope_counter = cur_func_scope; } function 
 	;
 
 arg_list: arg
@@ -121,4 +127,3 @@ void main(int argc, char **argv)
 {
   yyparse();
 }
-
