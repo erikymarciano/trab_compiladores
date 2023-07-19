@@ -1,0 +1,18 @@
+char erro1(float param1, int param2){    
+    int i;
+    if (i + w){
+        float m;
+    }
+}
+char erro2(float param1, int param2){    
+    int i, j, w, p;
+    char g;
+    if (i * 'g'){
+        float m;
+    }
+}
+char erro3(float param1, int param2){    
+    if (i + w){
+        float m;
+    }
+}
