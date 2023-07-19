@@ -178,17 +178,19 @@ L			[a-zA-Z_]
 "<"			{ count(); return LT; }
 ">"			{ count(); return GT; }
 
-[ \t\v\f]		{ count(); }
+[ \t\v\f\n]		{ count(); }
 
 .			{ /* ignore bad characters */ }
 
-"\n" {
+<<EOF>> {
+    //tabela de simbolos
 	node_t *current = head;
     printf("#\tID\tFUNC\tTYPE\tSCOPE_ID\tSCOPE_LEVEL\n");
 	while(current != NULL){
 		printf("%d\t%s\t%d\t%s\t%d\t\t%d\n", current->NodeID, current->ID, current->IsFunc, current->DataType, current->ScopeFather, current->ScopeLevel);
 		current = current->next;
 	}
+    yyterminate();
 }
 
 %%
