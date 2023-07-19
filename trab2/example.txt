@@ -1,1 +1,7 @@
-int main(float parama, int paramb){int hello, bye;}
+int main(float parama, int paramb){
+    int hello, parama;
+} 
+float min(int num){
+    int parama, paramb; 
+    float paramb; 
+}
