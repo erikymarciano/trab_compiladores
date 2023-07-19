@@ -6,9 +6,11 @@
 %{
     #include<stdio.h>
     
-    int cur_func_scope;
+    int cur_func_scope, cur_func_scope_level;
     extern int func_declaration;
+    extern int id_declaration;
     extern int scope_counter;
+    extern int scope_father;
     extern int cur_funcID;
 %}
 
@@ -26,7 +28,7 @@
 %%
 
 function:
-	| { func_declaration = 1; cur_func_scope = scope_counter; } type ID { func_declaration = 0; } LBRACKET arg_list RBRACKET { scope_counter = cur_funcID; } compound_stmt { scope_counter = cur_func_scope; } function 
+	| { func_declaration = 1; cur_func_scope = scope_father; cur_func_scope_level = scope_counter; } type ID { func_declaration = 0; } LBRACKET { id_declaration = 1; scope_father = cur_funcID; cur_func_scope_level = scope_counter++; } arg_list { id_declaration = 0; } RBRACKET compound_stmt { scope_father = cur_func_scope; scope_counter = cur_func_scope_level; } function 
 	;
 
 arg_list: arg
@@ -36,7 +38,7 @@ arg_list: arg
 arg: type ID
 	;
 
-declaration: type ident_list PCOMMA
+declaration: { id_declaration = 1; } type ident_list { id_declaration = 0; } PCOMMA
 	;
 
 type: INT 
