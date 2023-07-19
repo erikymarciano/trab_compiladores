@@ -351,8 +351,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 30
-#define YY_END_OF_BUFFER 31
+#define YY_NUM_RULES 29
+#define YY_END_OF_BUFFER 30
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -362,7 +362,7 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[56] =
     {   0,
-        0,    0,   31,   28,   27,   29,   28,   19,   20,   23,
+        0,    0,   30,   28,   27,   27,   28,   19,   20,   23,
        22,   17,   21,   24,    9,   14,   25,   18,   26,    8,
         8,    8,    8,    8,    8,   15,   16,   13,    0,    9,
        10,   12,   11,    8,    8,    8,    8,    8,    4,    8,
@@ -477,26 +477,32 @@ char *yytext;
 #line 1 "minic.l"
 #line 6 "minic.l"
 
-/* this scanner sourced from: http://www.lysator.liu.se/c/ANSI-C-grammar-l.html */
+    /* this scanner sourced from: http://www.lysator.liu.se/c/ANSI-C-grammar-l.html */
 
-void count();
-#include <stdio.h>
-#include <string.h>
-#include "minic.tab.h"
-#define MAXTOKENLEN 45
+    void count();
+    int getScopeLevel(int id);
+    int getScopeFatherId(int id);
+    int hasSimilarScopes(int id1, int id2);
+    int getIdAtScope(char *id_name, int id);
+    void handleIdNameAtScope(char *id_name, int id, int is_declaration);
+    #include <stdio.h>
+    #include <string.h>
+    #include "minic.tab.h"
+    int cur_funcID = 1, id_counter = 1;
+    int func_declaration = 0, id_declaration = 0;
+    int scope_counter = 0, scope_father = 0;
 
-typedef struct node {
-	int NodeID, IsFunction;
-	char ID[MAXTOKENLEN], DataType[MAXTOKENLEN];
-	struct node *next;
-} node_t;
+    typedef struct node {
+	    int NodeID;
+	    char ID[32], DataType[10];
+        int ScopeFather, ScopeLevel;
+        int IsFunc;
+	    struct node *next;
+    } node_t;
 
-node_t*head = NULL, *temp=NULL, *current=NULL;
-char LastDT[MAXTOKENLEN];
-int isDeclaration;
-int isFunction = 1;
-#line 499 "lex.yy.c"
-#line 500 "lex.yy.c"
+    node_t*head = NULL, *temp=NULL, *current=NULL;
+#line 505 "lex.yy.c"
+#line 506 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -713,9 +719,9 @@ YY_DECL
 		}
 
 	{
-#line 28 "minic.l"
+#line 34 "minic.l"
 
-#line 719 "lex.yy.c"
+#line 725 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -774,224 +780,280 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 29 "minic.l"
+#line 35 "minic.l"
 { 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
+        head->NodeID = id_counter++;
 		strcpy(head->DataType, yytext);
-		head->NodeID = 1;
-		head->IsFunction = isFunction;
+        head->ScopeFather = scope_father;
+        head->ScopeLevel = scope_counter;
 	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node)); 
+            temp->NodeID = id_counter++;
+			head->next = temp;
+		}
+		else if (temp->next == NULL) {
+			temp->next=(struct node*)malloc(sizeof(struct node)); 
+            temp->next->NodeID = id_counter++;
+			temp = (node_t*)temp->next;
+		}else{
+			temp = (node_t*)temp->next;   
+        }
 		strcpy(temp->DataType, yytext);
 	}
-	strcpy(LastDT, yytext);
 	count(); 
-	isDeclaration = 1;
 	return INT; 
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 43 "minic.l"
+#line 60 "minic.l"
 { 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
-		head->NodeID = 1;
-		head->IsFunction = isFunction;
 	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node)); 
+            temp->NodeID = id_counter++;
+			head->next = temp;
+		}
+		else if (temp->next == NULL) {
+			temp->next=(struct node*)malloc(sizeof(struct node)); 
+            temp->next->NodeID = id_counter++;
+			temp = (node_t*)temp->next;
+		}else{
+			temp = (node_t*)temp->next;   
+        }
 		strcpy(temp->DataType, yytext);
 	}
-	strcpy(LastDT, yytext);
 	count(); 
-	isDeclaration = 1;
 	return FLOAT; 
 }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 57 "minic.l"
+#line 82 "minic.l"
 { 
 	if(head == NULL){
 		head = (node_t*) malloc(sizeof(node_t)); 
 		strcpy(head->DataType, yytext);
-		head->NodeID = 1;
-		head->IsFunction = isFunction;
 	} else{
+		if (temp == NULL){
+			temp = (struct node*)malloc(sizeof(struct node)); 
+            temp->NodeID = id_counter++;
+			head->next = temp;
+		}
+		else if (temp->next == NULL) {
+			temp->next=(struct node*)malloc(sizeof(struct node)); 
+            temp->next->NodeID = id_counter++;
+			temp = (node_t*)temp->next;
+		}else{
+			temp = (node_t*)temp->next;   
+        }
 		strcpy(temp->DataType, yytext);
 	}
-	strcpy(LastDT, yytext);
 	count(); 
-	isDeclaration = 1;
 	return CHAR; 
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 71 "minic.l"
+#line 104 "minic.l"
 { count(); return IF; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 72 "minic.l"
+#line 105 "minic.l"
 { count(); return ELSE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 73 "minic.l"
+#line 106 "minic.l"
 { count(); return WHILE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 74 "minic.l"
+#line 107 "minic.l"
 { count(); return FOR; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 76 "minic.l"
+#line 109 "minic.l"
 {
-	if(head->next == NULL){
-		strcpy(head->ID, yytext);
-		temp = (struct node*)malloc(sizeof(struct node));
-		head->next = temp;
-		temp->NodeID = head->NodeID + 1;
-	} else if (isDeclaration){
-		strcpy(temp->ID, yytext);
-		if (temp->DataType[0] == NULL){
-			strcpy(temp->DataType, LastDT);
-		}
-		if (temp->next == NULL){
-			temp->next = (struct node*)malloc(sizeof(struct node));
-			temp->next->NodeID = temp->NodeID + 1;
-			temp = (node_t*)temp->next;
-		}
-	}
+    if (id_declaration || func_declaration){
+	    if(head->next == NULL){
+		    strcpy(head->ID, yytext);
+            head->ScopeFather = scope_father;
+            head->ScopeLevel = scope_counter;
+            head->IsFunc = func_declaration;
+            handleIdNameAtScope(head->ID, head->NodeID, id_declaration + func_declaration > 0);
+            
+	    } else if (temp->next == NULL){
+		    strcpy(temp->ID, yytext);
+            temp->ScopeFather = scope_father;
+            temp->ScopeLevel = scope_counter;
+            temp->IsFunc = func_declaration;
+            handleIdNameAtScope(temp->ID, temp->NodeID, id_declaration + func_declaration > 0);
+	    } else{
+		    temp = (node_t*)temp->next;
+		    strcpy(temp->ID, yytext);
+            temp->ScopeFather = scope_father;
+            temp->ScopeLevel = scope_counter;
+            temp->IsFunc = func_declaration;
+            handleIdNameAtScope(temp->ID, temp->NodeID, id_declaration + func_declaration > 0);
+	    }
+    }
+        
+    if (func_declaration){
+        if (head->next == NULL) {
+            cur_funcID = head->NodeID;
+        }
+        else {
+            cur_funcID = temp->NodeID;
+        }
+    } 
+
 	count();
 	return ID; 
 }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 97 "minic.l"
+#line 147 "minic.l"
 { count(); return NUMBER; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 99 "minic.l"
+#line 149 "minic.l"
 { count(); return LE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 100 "minic.l"
+#line 150 "minic.l"
 { count(); return GE; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 101 "minic.l"
+#line 151 "minic.l"
 { count(); return EQ; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 102 "minic.l"
+#line 152 "minic.l"
 { count(); return NE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 103 "minic.l"
+#line 153 "minic.l"
 { count(); return PCOMMA; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 104 "minic.l"
+#line 154 "minic.l"
 { count(); return LBRACE; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 105 "minic.l"
+#line 155 "minic.l"
 { count(); return RBRACE; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 106 "minic.l"
-{ count(); isDeclaration = 1; return COMMA; }
+#line 156 "minic.l"
+{ 
+	if(temp == NULL){
+		temp = (struct node*)malloc(sizeof(struct node)); 
+        temp->NodeID = id_counter++;
+		head->next = temp;
+		strcpy(temp->DataType, head->DataType);
+	} else {
+		temp->next=(struct node*)malloc(sizeof(struct node)); 
+        temp->next->NodeID = id_counter++;
+		strcpy(temp->next->DataType, temp->DataType);
+	}
+	
+	count(); 
+	return COMMA; 
+}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 107 "minic.l"
+#line 171 "minic.l"
 { count(); return ATTR; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 108 "minic.l"
+#line 172 "minic.l"
 { count(); return LBRACKET; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 109 "minic.l"
+#line 173 "minic.l"
 { count(); return RBRACKET; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 110 "minic.l"
+#line 174 "minic.l"
 { count(); return MINUS; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 111 "minic.l"
+#line 175 "minic.l"
 { count(); return PLUS; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 112 "minic.l"
+#line 176 "minic.l"
 { count(); return MULT; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 113 "minic.l"
+#line 177 "minic.l"
 { count(); return DIV; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 114 "minic.l"
+#line 178 "minic.l"
 { count(); return LT; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 115 "minic.l"
-{ count();return GT; }
+#line 179 "minic.l"
+{ count(); return GT; }
 	YY_BREAK
 case 27:
+/* rule 27 can match eol */
 YY_RULE_SETUP
-#line 117 "minic.l"
-{ int tempDeclaration = isDeclaration; count();  isDeclaration = tempDeclaration; }
+#line 181 "minic.l"
+{ count(); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 119 "minic.l"
+#line 183 "minic.l"
 { /* ignore bad characters */ }
 	YY_BREAK
-case 29:
-/* rule 29 can match eol */
-YY_RULE_SETUP
-#line 121 "minic.l"
+case YY_STATE_EOF(INITIAL):
+#line 185 "minic.l"
 {
+    //tabela de simbolos
 	node_t *current = head;
-	printf("|#\t|ID\t|TYPE\t|FUNC\n");
-	printf("| \t|  \t|    \t|    \n");
-	while(current!=NULL){
-		printf("|%d\t|%s\t|%s\t|%d\n",current->NodeID, current->ID, current->DataType, current->IsFunction);
+    printf("#\tID\tFUNC\tTYPE\tSCOPE_ID\tSCOPE_LEVEL\n");
+	while(current != NULL){
+		printf("%d\t%s\t%d\t%s\t%d\t\t%d\n", current->NodeID, current->ID, current->IsFunc, current->DataType, current->ScopeFather, current->ScopeLevel);
 		current = current->next;
 	}
+    yyterminate();
 }
 	YY_BREAK
-case 30:
+case 29:
 YY_RULE_SETUP
-#line 131 "minic.l"
+#line 196 "minic.l"
 ECHO;
 	YY_BREAK
-#line 993 "lex.yy.c"
-case YY_STATE_EOF(INITIAL):
-	yyterminate();
+#line 1057 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1994,25 +2056,84 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 131 "minic.l"
+#line 196 "minic.l"
 
 
 int column = 0;
+int line = 1;
 
 void count()
 {
 	int i;
 
 	for (i = 0; yytext[i] != '\0'; i++)
-		if (yytext[i] == '\n')
+		if (yytext[i] == '\n'){
 			column = 0;
+			line++;
+		}
 		else if (yytext[i] == '\t')
 			column += 8 - (column % 8);
 		else
 			column++; 
 
 	/*ECHO*/;
+}
 
-	isDeclaration = 0;
+
+int getScopeLevel(int id){
+node_t *current = head;
+	while(current != NULL){
+        if (current->NodeID == id) return current->ScopeLevel;
+		current = current->next;
+	}
+	return -1;
+}
+
+
+int getScopeFatherId(int id){
+    node_t *current = head;
+	while(current != NULL){
+        if (current->NodeID == id) return current->ScopeFather;
+		current = current->next;
+	}
+	return -1;
+}
+
+
+int hasSimilarScopes(int id1, int id2){
+    int level1 = getScopeLevel(id1);
+    int level2 = getScopeLevel(id2);
+    if (level1 > level2){
+        for(int i = level2; i < level1; i++){
+            id1 = getScopeFatherId(id1);
+        }
+    } else if (level2 > level1){
+        for(int i = level1; i < level2; i++){
+            id2 = getScopeFatherId(id2);
+        }
+    }
+
+    if (level1 == 0 || level2 == 0)
+        return id1 == id2;
+    return getScopeFatherId(id1) == getScopeFatherId(id2); 
+}
+
+
+int getIdAtScope(char *id_name, int id){
+    // busca na tabela de simbolos se ja existe esse identificador neste escopo
+    node_t *current = head;
+	while(current != NULL){
+        if (strcmp(current->ID, id_name) == 0 && current->NodeID != id && hasSimilarScopes(current->NodeID, id)) return current->NodeID;
+		current = current->next;
+	}
+	return -1;
+}
+
+void handleIdNameAtScope(char *id_name, int id, int is_declaration){
+    if(getIdAtScope(id_name, id) > 0 && is_declaration)
+        printf("[Error] line %d column %d - Identificador %s declarado anteriormente\n", line, column, id_name);
+
+    else if(getIdAtScope(id_name, id) <= 0 && !is_declaration)
+        printf("[Error] line %d column %d - Identificador %s não foi declarado\n", line, column, id_name);
 }
 

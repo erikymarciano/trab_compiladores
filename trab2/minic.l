@@ -196,14 +196,17 @@ L			[a-zA-Z_]
 %%
 
 int column = 0;
+int line = 1;
 
 void count()
 {
 	int i;
 
 	for (i = 0; yytext[i] != '\0'; i++)
-		if (yytext[i] == '\n')
+		if (yytext[i] == '\n'){
 			column = 0;
+			line++;
+		}
 		else if (yytext[i] == '\t')
 			column += 8 - (column % 8);
 		else
@@ -264,8 +267,8 @@ int getIdAtScope(char *id_name, int id){
 
 void handleIdNameAtScope(char *id_name, int id, int is_declaration){
     if(getIdAtScope(id_name, id) > 0 && is_declaration)
-        printf("[Error]\tIdentificador %s declarado anteriormente\n", id_name);
+        printf("[Error] line %d column %d - Identificador %s declarado anteriormente\n", line, column, id_name);
 
     else if(getIdAtScope(id_name, id) <= 0 && !is_declaration)
-        printf("[Error]\tIdentificador %s não foi declarado\n", id_name);
+        printf("[Error] line %d column %d - Identificador %s não foi declarado\n", line, column, id_name);
 }
