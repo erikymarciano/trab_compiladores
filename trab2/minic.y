@@ -12,8 +12,19 @@
     extern int scope_counter;
     extern int scope_father;
     extern int cur_funcID;
+    extern int getScopeLevel(int id);
+    extern int getScopeFatherId(int id);
+    extern int getTypeAtScope(char *name, int scope_id);
+    extern void checkSameTypeAtArithmetic(int type1, int type2, char *op);
+    extern void checkSameTypeAtComparison(int type1, int type2, char *op);
 %}
 
+%union
+{
+    int line;
+    int type;
+    char *code;
+}
 
 %token INT FLOAT CHAR
 %token IF ELSE WHILE FOR
@@ -22,7 +33,7 @@
 %token ATTR
 %token COMMA PCOMMA
 %token LBRACKET RBRACKET LBRACE RBRACE
-%token NUMBER
+%token NUMBER CHARACTER
 %token ID
 
 %%
@@ -35,26 +46,26 @@ arg_list: arg
 	| arg_list COMMA arg
 	;
 
-arg: type ID
+arg: type ID 
 	;
 
 declaration: { id_declaration = 1; } type ident_list { id_declaration = 0; } PCOMMA
 	;
 
-type: INT 
-	| FLOAT 
-	| CHAR 
+type: INT
+	| FLOAT
+	| CHAR
 	;
 
 ident_list: ID COMMA ident_list
 	| ID
 	;
 
-stmt: for_stmt 
-	| while_stmt 
+stmt: { cur_func_scope = scope_father; cur_func_scope_level = scope_counter; } for_stmt 
+	| { cur_func_scope = scope_father; cur_func_scope_level = scope_counter; } while_stmt 
 	| expr PCOMMA 
-	| if_stmt 
-	| compound_stmt 
+	| { cur_func_scope = scope_father; cur_func_scope_level = scope_counter; } if_stmt 
+	| { scope_father = cur_funcID; cur_func_scope_level = scope_counter++; } compound_stmt { scope_father = getScopeFatherId(cur_func_scope); scope_counter = getScopeLevel(cur_func_scope_level); } 
 	| declaration 
 	| PCOMMA 
 	;
@@ -72,7 +83,7 @@ while_stmt: WHILE LBRACKET expr RBRACKET stmt
 if_stmt: IF LBRACKET expr RBRACKET stmt else_part
 	;
 
-else_part: ELSE stmt
+else_part: { cur_func_scope = scope_father; cur_func_scope_level = scope_counter; } ELSE stmt
 	|
 	;
 
@@ -83,39 +94,39 @@ stmt_list: stmt_list stmt
 	|
 	;
 
-expr: ID ATTR expr
-	| r_value
+expr: ID ATTR expr { checkSameTypeAtComparison($<type>1, $<type>3, $<code>2); $<type>$ = $<type>1; }
+	| r_value { $<type>$ = $<type>1; }
 	;
 
-r_value: r_value compare mag
-	| mag
+r_value: r_value compare mag  { checkSameTypeAtComparison($<type>1, $<type>3, $<code>2); $<type>$ = $<type>1; }
+	| mag  { $<type>$ = $<type>1; }
 	;
 
 compare: EQ 
-	| LT
-	| GT
-	| LE
+	| LT 
+	| GT 
+	| LE 
 	| GE
 	| NE
 	;
 
 mag
-	: mag PLUS term
-	| mag MINUS term
-	| term
+	: mag PLUS term { checkSameTypeAtArithmetic($<type>1, $<type>3, $<code>2); $<type>$ = NUMBER; }
+	| mag MINUS term { checkSameTypeAtArithmetic($<type>1, $<type>3, $<code>2); $<type>$ = NUMBER; }
+	| term { $<type>$ = $<type>1; }
 	;
 
-term: term MULT factor
-	| term DIV factor
-	| factor
+term: term MULT factor { checkSameTypeAtArithmetic($<type>1, $<type>3, $<code>2); $<type>$ = NUMBER; }
+	| term DIV factor { checkSameTypeAtArithmetic($<type>1, $<type>3, $<code>2); $<type>$ = NUMBER; }
+	| factor { $<type>$ = $<type>1; }
 	;
 
-factor: LBRACKET expr RBRACKET
-	| MINUS factor
-	| PLUS factor
-	| ID
-	| NUMBER
-	| CHAR
+factor: LBRACKET expr RBRACKET { $<type>$ = $<type>2; }
+	| MINUS factor { $<type>$ = $<type>2; }
+	| PLUS factor { $<type>$ = $<type>2; }
+	| ID { $<type>$ = getTypeAtScope($<code>1, cur_funcID); }
+	| NUMBER { $<type>$ = NUMBER; }
+    | CHARACTER { $<type>$ = CHARACTER; }
 	;
 
 %%

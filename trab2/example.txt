@@ -1,7 +1,19 @@
-int main(float parama, int paramb){
-    int hello, parama;
+char main(float parama, int paramb){
+    char hello;
+    int a, b;
+    a = 'b' - b;
 } 
+
 float min(int num){
-    int parama, paramb; 
-    float paramb; 
+    float parama, paramb;
+    paramb = paramb + parama;
+    
+    if (parama > paramb){
+        int a;
+        a = 20;
+        if(a > 10){
+            int b;
+            a = 'l';
+        }
+    }
 }
