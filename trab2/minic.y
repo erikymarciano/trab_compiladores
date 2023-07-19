@@ -127,5 +127,5 @@ int yyerror(char *s)
 
 void main(int argc, char **argv)
 {
-  yyparse();
+    yyparse(); 
 }
