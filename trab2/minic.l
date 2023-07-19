@@ -401,14 +401,20 @@ int isIdAtScope(int id, int scope, int is_declaration){
         for(int i = level1; i < level2; i++){
             scope = getScopeFatherId(scope);
         }
+        //printf("%d\n", id == scope);
+        return id == scope;
+    }
+    else{
+        //printf(":%d\n", getScopeFatherId(id) == getScopeFatherId(scope));
+        return getScopeFatherId(id) == getScopeFatherId(scope);
     }
 
     if (getScopeFatherId(id) == getScopeFatherId(scope)){
-        //printf("%d\n", id == scope);
+        //printf("::%d\n", id == scope);
         return id == scope; 
     }
-    //printf("%d\n", getScopeFatherId(id) == getScopeFatherId(scope));
-    return getScopeFatherId(id) == getScopeFatherId(scope);
+    //printf(":::0\n");
+    return 0;
 }
 
 
